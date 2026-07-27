@@ -142,11 +142,28 @@ class Item(pygame.sprite.Sprite):
         
         self.visible = True
 
+        self.rotation = 0
+
         app.group.add(self)
+
+    def changeRotation(self, degrees : int):
+        rotation = (self.rotation + degrees) % 360
+        self.rotation = rotation
+        
+    def handleRotation(self) -> pygame.Surface:
+        screenSurface = pygame.Surface((self.rect.width, self.rect.height), flags = pygame.SRCALPHA)
+        self.render(screenSurface, (0, 0))
+        screenSurface = pygame.transform.rotate(screenSurface, self.rotation)
+        return screenSurface
+
+    def render(self, surface : pygame.Surface, destination : pygame.typing.Point):
+        """
+        Method which should render the Item to the given surface, at the given coordinates
+        """
     
     def draw(self):
         """
-        Abstract mmethod that all children classes should have,
+        Abstract method that all children classes should have,
         should draw item to surface
         """
         pass
@@ -165,8 +182,20 @@ class Graphic(Item):
         else:
             self.sprite = sprite
 
+    def update(self):
+        pass
+
+    def render(self, surface : pygame.Surface, destination : pygame.typing.Point) -> None:
+            top, left = destination
+            alignedRect = pygame.Rect(top, left, self.width, self.height)
+            surface.blit(self.sprite, alignedRect)
+
     def draw(self):
-        self.app.screen.blit(self.sprite, self.rect)
+        screenSurface = self.handleRotation()
+        screenSurfaceRect = screenSurface.get_rect()
+        correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
+        correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
+        self.app.screen.blit(screenSurface, (correctedLeft, correctedTop))
 
 class Timer(Item):
     def __init__(self, app: App, x : int, y : int, width : int, height : int,
@@ -212,6 +241,7 @@ class Timer(Item):
         text = self.font.render(self.getPrettyTime(), True, self.color)
         textRect = text.get_rect(center = self.rect.center)
         self.app.screen.blit(text, textRect)
+        
 
 class TextBox(Item):
 
@@ -240,13 +270,13 @@ class TextBox(Item):
                             'left-middle', 'center-middle', 'right-middle',
                             'left-bottom', 'center-bottom', 'right-bottom']
         
-        self.horizontalAlignDict = {'left' : 'self.rect.left + self.padding',
-                                    'center' : 'self.rect.centerx - (0.5 * lineSurface.get_width())',
-                                    'right' : 'self.rect.right - lineSurface.get_width()'}
+        self.horizontalAlignDict = {'left' : 'renderingRect.left + self.padding',
+                                    'center' : 'renderingRect.centerx - (0.5 * lineSurface.get_width())',
+                                    'right' : 'renderingRect.right - lineSurface.get_width()'}
         
-        self.verticalAlignDict = {'top' : 'self.rect.top',
-                                  'middle' : 'self.rect.centery - (0.5 * totalHeight)',
-                                  'bottom' : 'self.rect.bottom - totalHeight'}
+        self.verticalAlignDict = {'top' : 'renderingRect.top',
+                                  'middle' : 'renderingRect.centery - (0.5 * totalHeight)',
+                                  'bottom' : 'renderingRect.bottom - totalHeight'}
         
         if 1 <= spacing <= 3:
             self.spacing = spacing
@@ -267,8 +297,9 @@ class TextBox(Item):
             print(alignment)
         return self.validAligns
 
-    def draw(self) -> None:
+    def render(self, surface, destination):
         "Renders the text to the surface."
+        renderingRect = pygame.Rect(destination, (self.rect.width, self.rect.height))
         padding = 20
         lineSpacing = self.font.point_size * self.spacing
         words = self.text.split(' ') # -> words is a sequential list of all words
@@ -301,8 +332,15 @@ class TextBox(Item):
         for line in lines:
             lineSurface = self.font.render(line, True, (0, 0, 0))
             lineX = eval(self.horizontalAlignDict[textAlignments[0]])
-            self.app.screen.blit(lineSurface, (lineX, lineY))
+            surface.blit(lineSurface, (lineX, lineY))
             lineY += lineSpacing
+
+    def draw(self) -> None:
+        screenSurface = self.handleRotation()
+        screenSurfaceRect = screenSurface.get_rect()
+        correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
+        correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
+        self.app.screen.blit(screenSurface, (correctedLeft, correctedTop))
             
     
     def update(self):
@@ -339,9 +377,18 @@ class Rectangle(Item):
         "No update on step"
         pass
 
+    def render(self, surface : pygame.Surface, destination : pygame.typing.Point) -> None:
+        top, left = destination
+        alignedRect = pygame.Rect(top, left, self.width, self.height)
+        pygame.draw.rect(surface, self.fill, alignedRect)
+
     def draw(self) -> None:
         "Renders the rectangle to its assigned app screen"
-        pygame.draw.rect(self.app.screen, self.fill, self.rect)
+        screenSurface = self.handleRotation()
+        screenSurfaceRect = screenSurface.get_rect()
+        correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
+        correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
+        self.app.screen.blit(screenSurface, (correctedLeft, correctedTop))
     
     def reColor(self, fill : pygame.typing.ColorLike = (0, 0, 0)) -> None:
         "Set rectangle to a different color"
@@ -370,9 +417,19 @@ class Circle(Item):
         "No update on step"
         pass
 
+    def render(self, surface : pygame.Surface, destination : pygame.typing.Point) -> None:
+        left, top = destination
+        centerX = left + self.radius
+        centerY = top + self.radius
+        pygame.draw.circle(surface, self.fill, (centerX, centerY), self.radius)
+    
     def draw(self):
         "Renders the circle to its assigned app screen"
-        pygame.draw.circle(self.app.screen, self.fill, self.rect.center, self.radius)
+        screenSurface = self.handleRotation()
+        screenSurfaceRect = screenSurface.get_rect()
+        correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
+        correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
+        self.app.screen.blit(screenSurface, (correctedLeft, correctedTop))
     
     def reColor(self, fill : pygame.typing.ColorLike = (0, 0, 0)):
         "Set Circle to a different color"
@@ -395,9 +452,18 @@ class Ellipse(Item):
         "No update on step"
         pass
 
+    def render(self, surface, destination):
+        top, left = destination
+        alignedRect = pygame.Rect(top, left, self.width, self.height)
+        pygame.draw.ellipse(surface, self.fill, alignedRect)
+        
     def draw(self):
         "Renders the ellipse to its assigned app screen"
-        pygame.draw.ellipse(self.app.screen, self.fill, self.rect)
+        screenSurface = self.handleRotation()
+        screenSurfaceRect = screenSurface.get_rect()
+        correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
+        correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
+        self.app.screen.blit(screenSurface, (correctedLeft, correctedTop))
     
     def reColor(self, fill : pygame.typing.ColorLike = (0, 0, 0)):
         "Set this ellipse to a different color"
@@ -407,7 +473,7 @@ class Line(Item):
 
     def __init__(self,
                  app : App, x1 : int, y1 : int, x2 : int, y2 : int,
-                 width : float = 1.0, color : pygame.typing.ColorLike = (0, 0, 0)):
+                 width : int = 1, color : pygame.typing.ColorLike = (0, 0, 0)):
 
         """
         Defines a line based on two points.
@@ -418,8 +484,11 @@ class Line(Item):
         :param width: pixel width of the line between the two points. Defaults to 1
         :param color: color of the line. Defaults to black
         """
+
+        rectWidth = abs(x1 - x2) + width
+        rectHeight = abs(y1 - y2) + width
         
-        boundingRect = pygame.Rect((x1, y1), (x2, y2))
+        boundingRect = pygame.Rect((x1, y1), (rectWidth, rectHeight))
         super().__init__(app, boundingRect.left, boundingRect.top, boundingRect.width, boundingRect.height, color)
 
         self.x1 = x1
@@ -436,9 +505,19 @@ class Line(Item):
         "No update on step"
         pass
 
+    def render(self, surface, destination):
+        destX, destY = destination
+        endPointX = destX + abs(self.x1 - self.x2)
+        endPointY = destY + abs(self.y1 - self.y2)
+        pygame.draw.line(surface, self.fill, (destX, destY), (endPointX, endPointY), width = self.width)
+    
     def draw(self):
         "Renders the line on its assigned app screen"
-        pygame.draw.line(self.app.screen, self.fill, self.startPoint, self.endPoint, width = self.width)
+        screenSurface = self.handleRotation()
+        screenSurfaceRect = screenSurface.get_rect()
+        correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
+        correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
+        self.app.screen.blit(screenSurface, (correctedLeft, correctedTop))
     
     def reColor(self, fill : pygame.typing.ColorLike = (0, 0, 0)):
         "Sets the color of line"

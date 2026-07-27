@@ -1,2 +1,6 @@
 # Environments
 .venv/
+__pycache__/
+
+# Test Area
+testApp.py

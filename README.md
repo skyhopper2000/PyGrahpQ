@@ -15,6 +15,7 @@ So I decided I would build my own pygame-ce wrapper without guardrails so that I
 
 ## Minimal implementation
 ```python
+from pygraphq import *
 app = App()
 
 ## Your code here
