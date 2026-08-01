@@ -28,7 +28,8 @@ class App():
         # Alignment
         self.rect = pygame.Rect(0, 0, screenWidth, screenHeight)
 
-        self.fps = fps
+        self.basefps = fps
+        self.fps = self.basefps
         self.background = background
         self.group = pygame.sprite.Group()
         self.groups = {'app' : self.group}
@@ -57,6 +58,7 @@ class App():
         self.clock = pygame.time.Clock()
         self.dt = 0.0
         self.tnaught = self.clock.get_time()
+        self.keys = []
 
         self.running = True
         
@@ -82,11 +84,20 @@ class App():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.mouseIsDown = True
-                    self.fire('mouseDown', self)
+                    self.fire('mouseDown', self, self.mouseX, self.mouseY)
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.mouseIsDown = False
-                    self.fire('mouseUp', self)
+                    self.fire('mouseUp', self, self.mouseX, self.mouseY)
+            if event.type == pygame.KEYDOWN:
+                self.keys.append(event.key)
+                self.fire('keyDown', self, event.key)
+            if event.type == pygame.KEYUP:
+                self.keys.remove(event.key)
+                self.fire('keyUp', self, event.key)
+
+
+        self.fire('keyHold', self, self.keys)
         
         self.fire('step', self)
 
@@ -94,9 +105,9 @@ class App():
 
         self.redrawAll()
 
-        self.clock.tick(30)
-
         pygame.display.flip()
+
+        self.clock.tick(self.fps)
 
     def addGroup(self, name : str, objects : list) -> None:
         "Adds a new group to app.groups, assigned as 'name' : [objects]"
@@ -117,6 +128,15 @@ class App():
         """Call this internally when the event happens."""
         for handler in self.eventHandlers.get(event, []):
             handler(*args, **kwargs) # Calls any function that hes the given 'event' key
+
+    def stop(self):
+        pygame.quit()
+
+    def pause(self):
+        self.fps = 0
+
+    def unpause(self):
+        self.fps = self.basefps
 
 class HitBox:
 
