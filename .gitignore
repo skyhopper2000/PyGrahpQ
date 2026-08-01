@@ -1,6 +1,7 @@
 # Environments
 .venv/
+.pytest_cache/
 __pycache__/
 
 # Test Area
-testApp.py
+sandbox.py

@@ -49,7 +49,7 @@ class App():
         running: determines if the App is running. Setting to false quits the app.
         """
         pygame.init()
-        self.screen = pygame.display.set_mode((self.rect.width, self.rect.height), pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode((self.rect.width, self.rect.height))
         pygame.display.set_caption(self.name)
         if self.icon is not None:
             pygame.display.set_icon(self.icon)
