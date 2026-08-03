@@ -28,7 +28,8 @@ class App():
         # Alignment
         self.rect = pygame.Rect(0, 0, screenWidth, screenHeight)
 
-        self.fps = fps
+        self.basefps = fps
+        self.fps = self.basefps
         self.background = background
         self.group = pygame.sprite.Group()
         self.groups = {'app' : self.group}
@@ -38,6 +39,7 @@ class App():
         self.mouseIsDown = False
 
         self.running = False
+        self.paused = True
         self.eventHandlers = {} # a dictionary of 'eventName' to function
 
     def start(self) -> None:
@@ -57,7 +59,9 @@ class App():
         self.clock = pygame.time.Clock()
         self.dt = 0.0
         self.tnaught = self.clock.get_time()
+        self.keys = []
 
+        self.paused = False
         self.running = True
         
         while self.running:
@@ -73,30 +77,40 @@ class App():
 
     def step(self) -> None:
         "Updates the state of the app by 1 frame. To change, use @app.on('step')"
+        
         self.mouseX, self.mouseY = pygame.mouse.get_pos()
         self.dt = (self.clock.get_time() - self.tnaught) / 1000
+        if not self.paused:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        self.mouseIsDown = True
+                        self.fire('mouseDown', self, self.mouseX, self.mouseY)
+                if event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1:
+                        self.mouseIsDown = False
+                        self.fire('mouseUp', self, self.mouseX, self.mouseY)
+                if event.type == pygame.KEYDOWN:
+                    self.keys.append(event.key)
+                    self.fire('keyDown', self, event.key)
+                if event.type == pygame.KEYUP:
+                    self.keys.remove(event.key)
+                    self.fire('keyUp', self, event.key)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    self.mouseIsDown = True
-                    self.fire('mouseDown', self)
-            if event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:
-                    self.mouseIsDown = False
-                    self.fire('mouseUp', self)
-        
-        self.fire('step', self)
 
-        self.group.update()
+            self.fire('keyHold', self, self.keys)
+            
+            self.fire('step', self)
 
-        self.redrawAll()
+            self.group.update()
 
-        self.clock.tick(30)
+            self.redrawAll()
 
-        pygame.display.flip()
+            pygame.display.flip()
+
+        self.clock.tick(self.fps)
 
     def addGroup(self, name : str, objects : list) -> None:
         "Adds a new group to app.groups, assigned as 'name' : [objects]"
@@ -117,6 +131,15 @@ class App():
         """Call this internally when the event happens."""
         for handler in self.eventHandlers.get(event, []):
             handler(*args, **kwargs) # Calls any function that hes the given 'event' key
+
+    def stop(self):
+        self.running = False
+
+    def pause(self):
+        self.fps = 0
+
+    def unpause(self):
+        self.fps = self.basefps
 
 class HitBox:
 
