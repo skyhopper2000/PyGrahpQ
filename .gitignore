@@ -1,6 +1,6 @@
 # Environments
 .venv/
-.pytest_cache
+.pytest_cache/
 __pycache__/
 
 # Test Area

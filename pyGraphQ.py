@@ -39,6 +39,7 @@ class App():
         self.mouseIsDown = False
 
         self.running = False
+        self.paused = True
         self.eventHandlers = {} # a dictionary of 'eventName' to function
 
     def start(self) -> None:
@@ -50,7 +51,7 @@ class App():
         running: determines if the App is running. Setting to false quits the app.
         """
         pygame.init()
-        self.screen = pygame.display.set_mode((self.rect.width, self.rect.height), pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode((self.rect.width, self.rect.height))
         pygame.display.set_caption(self.name)
         if self.icon is not None:
             pygame.display.set_icon(self.icon)
@@ -60,6 +61,7 @@ class App():
         self.tnaught = self.clock.get_time()
         self.keys = []
 
+        self.paused = False
         self.running = True
         
         while self.running:
@@ -75,37 +77,38 @@ class App():
 
     def step(self) -> None:
         "Updates the state of the app by 1 frame. To change, use @app.on('step')"
+        
         self.mouseX, self.mouseY = pygame.mouse.get_pos()
         self.dt = (self.clock.get_time() - self.tnaught) / 1000
+        if not self.paused:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        self.mouseIsDown = True
+                        self.fire('mouseDown', self, self.mouseX, self.mouseY)
+                if event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1:
+                        self.mouseIsDown = False
+                        self.fire('mouseUp', self, self.mouseX, self.mouseY)
+                if event.type == pygame.KEYDOWN:
+                    self.keys.append(event.key)
+                    self.fire('keyDown', self, event.key)
+                if event.type == pygame.KEYUP:
+                    self.keys.remove(event.key)
+                    self.fire('keyUp', self, event.key)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    self.mouseIsDown = True
-                    self.fire('mouseDown', self, self.mouseX, self.mouseY)
-            if event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:
-                    self.mouseIsDown = False
-                    self.fire('mouseUp', self, self.mouseX, self.mouseY)
-            if event.type == pygame.KEYDOWN:
-                self.keys.append(event.key)
-                self.fire('keyDown', self, event.key)
-            if event.type == pygame.KEYUP:
-                self.keys.remove(event.key)
-                self.fire('keyUp', self, event.key)
 
+            self.fire('keyHold', self, self.keys)
+            
+            self.fire('step', self)
 
-        self.fire('keyHold', self, self.keys)
-        
-        self.fire('step', self)
+            self.group.update()
 
-        self.group.update()
+            self.redrawAll()
 
-        self.redrawAll()
-
-        pygame.display.flip()
+            pygame.display.flip()
 
         self.clock.tick(self.fps)
 
@@ -130,7 +133,7 @@ class App():
             handler(*args, **kwargs) # Calls any function that hes the given 'event' key
 
     def stop(self):
-        pygame.quit()
+        self.running = False
 
     def pause(self):
         self.fps = 0
