@@ -593,8 +593,6 @@ class RoundRectangle(Rectangle):
         All roundness arguments are 0 (no curve) by default.
         Range is [0, min(height, width) / 2].
         """
-        
-        super().__init__(app, x, y, width, height, fill)
 
         self.roundness = roundness
 
@@ -602,6 +600,10 @@ class RoundRectangle(Rectangle):
         self.r2 = r2
         self.r3 = r3
         self.r4 = r4
+        
+        super().__init__(app, x, y, width, height, fill)
+
+
 
         
     def render(self, surface : pygame.Surface, destination : pygame.typing.Point) -> None:
