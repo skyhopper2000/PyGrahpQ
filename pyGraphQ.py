@@ -145,20 +145,29 @@ class HitBox:
 
     def __init__(self, app : App, surface : pygame.Surface, origin : pygame.typing.Point):
          self.app = app
-         mask = pygame.mask.from_surface(surface)
-         maskRect = mask.get_rect()
+         self.mask = pygame.mask.from_surface(surface)
+         maskRect = self.mask.get_rect()
          self.box = []
          for x in range(maskRect.width):
              for y in range(maskRect.height):
-                 if mask.get_at((x, y)) == 1:
+                 if self.mask.get_at((x, y)) == 1:
                      x0, y0 = origin
                      self.box.append(((x0 + x), (y0 + y)))
 
     def hitPoint(self, point : pygame.typing.Point) -> bool:
         return (point in self.box)
 
+class Border:
+    def __init__(self, width : int, color : pygame.typing.ColorLike):
+        self.color = color
+        if width == 0:
+            self.width = -1
+        else:
+            self.width = width
+
 class Item(pygame.sprite.Sprite):
-    def __init__(self, app : App, x : int, y : int, width : int, height : int, fill : pygame.typing.ColorLike):
+    def __init__(self, app : App, x : int, y : int, width : int, height : int, 
+                 fill : pygame.typing.ColorLike):
         """
         Simple base class for visual objects,
         
@@ -292,7 +301,7 @@ class Timer(Item):
 class TextBox(Item):
 
     def __init__(self, app: App, x : int, y : int, width : int, height : int,
-                 text : str, font : pygame.Font = DEFAULT_FONT,
+                 text : str, border : Border | None = None, font : pygame.Font = DEFAULT_FONT,
                  align : str = "left-top", padding : int = 20, spacing : float = 1.15) -> None:
 
         """
@@ -305,7 +314,7 @@ class TextBox(Item):
         """
         
         
-
+        self.border = border
         self.text = text
         self.font = font
         self.visible = True
@@ -382,6 +391,8 @@ class TextBox(Item):
             lineX = eval(self.horizontalAlignDict[textAlignments[0]])
             surface.blit(lineSurface, (lineX, lineY))
             lineY += lineSpacing
+        if self.border != None:
+            pygame.draw.rect(surface, self.border.color, self.rect, width = self.border.width)
 
     def draw(self) -> None:
         screenSurface = self.handleRotation()
@@ -414,11 +425,12 @@ class Rectangle(Item):
 
     def __init__(self,
                  app : App, x : int, y : int, width : int, height : int,
-                 fill : pygame.typing.ColorLike = (0, 0, 0)) -> None:
+                 fill : pygame.typing.ColorLike = (0, 0, 0), border : Border | None = None) -> None:
         """
         Class for drawing rectangles with straight edges.
         :param fill: The color in which the rectangle is drawn. Defaults to black.
         """
+        self.border = border
         super().__init__(app, x, y, width, height, fill)
     
     def update(self) -> None:
@@ -429,6 +441,8 @@ class Rectangle(Item):
         top, left = destination
         alignedRect = pygame.Rect(top, left, self.width, self.height)
         pygame.draw.rect(surface, self.fill, alignedRect)
+        if self.border != None:
+            pygame.draw.rect(surface, self.border.color, alignedRect, width = self.border.width)
 
     def draw(self) -> None:
         "Renders the rectangle to its assigned app screen"
@@ -442,7 +456,7 @@ class Circle(Item):
 
     def __init__(self,
                  app : App, centerX : int, centerY : int, radius : int,
-                 fill : pygame.typing.ColorLike = (0, 0, 0)):
+                 fill : pygame.typing.ColorLike = (0, 0, 0), border : Border | None = None):
         """
         Class for circles centered on a point.
         :param centerX: the centermost x position of the circle
@@ -455,6 +469,7 @@ class Circle(Item):
         width = 2 * radius
         height = width
         self.radius = radius
+        self.border = border
         super().__init__(app, top, left, width, height, fill)
         
     
@@ -467,6 +482,9 @@ class Circle(Item):
         centerX = left + self.radius
         centerY = top + self.radius
         pygame.draw.circle(surface, self.fill, (centerX, centerY), self.radius)
+        if self.border != None:
+            pygame.draw.circle(surface, self.border.color, (centerX, centerY), 
+                               self.radius, width = self.border.width)
     
     def draw(self):
         "Renders the circle to its assigned app screen"
@@ -481,12 +499,13 @@ class Ellipse(Item):
 
     def __init__(self,
                  app : App, x : int, y : int, width : int, height : int,
-                 fill : pygame.typing.ColorLike = (0, 0, 0)):
+                 fill : pygame.typing.ColorLike = (0, 0, 0), border : Border | None = None):
 
         """
         Class for drawing ellipse defined by a rectangular bounding box.
         :param fill: The color in which the rectangle is drawn. Defaults to black.
         """
+        self.border = border
         super().__init__(app, x, y, width, height, fill)
     
     def update(self, *args, **kwargs):
@@ -497,6 +516,8 @@ class Ellipse(Item):
         top, left = destination
         alignedRect = pygame.Rect(top, left, self.width, self.height)
         pygame.draw.ellipse(surface, self.fill, alignedRect)
+        if self.border != None:
+            pygame.draw.ellipse(surface, self.border.color, alignedRect, width = self.border.width)
         
     def draw(self):
         "Renders the ellipse to its assigned app screen"
@@ -510,7 +531,7 @@ class Line(Item):
 
     def __init__(self,
                  app : App, x1 : int, y1 : int, x2 : int, y2 : int,
-                 width : int = 1, color : pygame.typing.ColorLike = (0, 0, 0)):
+                 lineWidth : int = 1, color : pygame.typing.ColorLike = (0, 0, 0)):
 
         """
         Defines a line based on two points.
@@ -522,8 +543,9 @@ class Line(Item):
         :param color: color of the line. Defaults to black
         """
 
-        rectWidth = abs(x1 - x2) + width
-        rectHeight = abs(y1 - y2) + width
+        self.lineWidth = lineWidth
+        rectWidth = abs(x1 - x2) + lineWidth
+        rectHeight = abs(y1 - y2) + lineWidth
 
         self.x1 = x1
         self.y1 = y1
@@ -533,13 +555,9 @@ class Line(Item):
         self.startPoint = (x1, y1) # local information
         self.endPoint = (x2, y2) # local information
         
-        self.width = width
-        
         boundingRect = pygame.Rect((x1, y1), (rectWidth, rectHeight))
         super().__init__(app, boundingRect.left, boundingRect.top, boundingRect.width, boundingRect.height, color)
 
-        
-    
     def update(self):
         
         super().update()
@@ -548,7 +566,7 @@ class Line(Item):
         destX, destY = destination
         endPointX = destX + abs(self.x1 - self.x2)
         endPointY = destY + abs(self.y1 - self.y2)
-        pygame.draw.line(surface, self.fill, (destX, destY), (endPointX, endPointY), width = self.width)
+        pygame.draw.line(surface, self.fill, (destX, destY), (endPointX, endPointY), width = self.lineWidth)
     
     def draw(self):
         "Renders the line on its assigned app screen"
@@ -593,6 +611,11 @@ class RoundRectangle(Rectangle):
                          border_radius = self.roundness, border_top_left_radius = self.r1,
                          border_top_right_radius = self.r2, border_bottom_left_radius = self.r3,
                          border_bottom_right_radius = self.r4)
+        if self.border != None:
+            pygame.draw.rect(surface, self.border.color, alignedRect, width = self.border.width,
+                             border_radius = self.roundness, border_top_left_radius = self.r1,
+                             border_top_right_radius = self.r2, border_bottom_left_radius = self.r3,
+                             border_bottom_right_radius = self.r4)
         
 class Button:
 
@@ -627,7 +650,7 @@ class Button:
     def fireClick(self, *args, **kwargs):
         """Call this internally when the event happens."""
         for handler in self.whenClickedFunc:
-            handler(*args, **kwargs) # Calls any function that hes the given 'event' key
+            handler(*args, **kwargs) # Calls any function that has the given 'event' key
     
 
 
