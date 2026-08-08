@@ -93,6 +93,12 @@ class App():
                     if event.button == 1:
                         self.mouseIsDown = False
                         self.fire('mouseUp', self, self.mouseX, self.mouseY)
+                        try:
+                            for button in self.groups['buttons'].sprites():
+                                if button.isPressed:
+                                    button.fireClick(button)
+                        except KeyError:
+                            pass
                 if event.type == pygame.KEYDOWN:
                     self.keys.append(event.key)
                     self.fire('keyDown', self, event.key)
@@ -636,6 +642,7 @@ class Button:
         self.pressedColor = pressedColor
         self.releasedColor = getattr(self, 'fill')
         self.isPressed = False
+        self.app.groups['buttons'].add(self)
         self.whenClickedFunc = []
 
     def update(self):
