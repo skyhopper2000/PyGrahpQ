@@ -32,7 +32,8 @@ class App():
         self.fps = self.basefps
         self.background = background
         self.group = pygame.sprite.Group()
-        self.groups = {'app' : self.group}
+        self.groups = {'app' : self.group,
+                       'buttons' : pygame.sprite.Group()}
 
         self.mouseX = 0
         self.mouseY = 0
@@ -99,7 +100,6 @@ class App():
                     self.keys.remove(event.key)
                     self.fire('keyUp', self, event.key)
 
-
             self.fire('keyHold', self, self.keys)
             
             self.fire('step', self)
@@ -145,17 +145,27 @@ class HitBox:
 
     def __init__(self, app : App, surface : pygame.Surface, origin : pygame.typing.Point):
          self.app = app
-         self.mask = pygame.mask.from_surface(surface)
-         maskRect = self.mask.get_rect()
+         self.mask = pygame.mask.from_surface(surface, threshold = 0)
+         self.maskRect = self.mask.get_rect()
          self.box = []
-         for x in range(maskRect.width):
-             for y in range(maskRect.height):
+         for y in range(self.maskRect.height):
+             for x in range(self.maskRect.width):
                  if self.mask.get_at((x, y)) == 1:
                      x0, y0 = origin
                      self.box.append(((x0 + x), (y0 + y)))
 
     def hitPoint(self, point : pygame.typing.Point) -> bool:
         return (point in self.box)
+
+    def prettyMask(self) -> str:
+        "Returns a simple representation of the mask of the hitbox, where each pixel in the hitbox is either 1 or 0."
+        output = ""
+        for y in range(self.maskRect.height):
+            for x in range(self.maskRect.width):
+                output = output + str(self.mask.get_at((x, y)))
+            output = output + '\n'
+        return output
+
 
 class Border:
     def __init__(self, width : int, color : pygame.typing.ColorLike):
