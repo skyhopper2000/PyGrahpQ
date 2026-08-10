@@ -126,7 +126,7 @@ class App():
                 self.group.add(obj)
         self.groups[name].add(objects)
     
-    def on(self, event : str) -> function:
+    def on(self, event : str):
         """Decorator: register a function to fire when `event` occurs."""
         def decorator(func):
             self.eventHandlers.setdefault(event, []).append(func) # Gives function a callable key
