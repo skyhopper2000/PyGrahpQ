@@ -93,6 +93,3 @@ class TestRectangle:
         
         self.app.start()
 
-        
-        
-        
