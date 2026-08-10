@@ -157,6 +157,7 @@ class HitBox:
     def hitPoint(self, point : pygame.typing.Point) -> bool:
         return (point in self.box)
 
+
 class Border:
     def __init__(self, width : int, color : pygame.typing.ColorLike):
         self.color = color
@@ -301,13 +302,19 @@ class Timer(Item):
 class TextBox(Item):
 
     def __init__(self, app: App, x : int, y : int, width : int, height : int,
-                 text : str, border : Border | None = None, font : pygame.Font = DEFAULT_FONT,
+                 text : str, border : Border | None = None, typeFace : str = 'Arial', size : int = 12, 
+                 color : pygame.typing.ColorLike = (0, 0, 0), italic : bool = False, bold : bool = False,
                  align : str = "left-top", padding : int = 20, spacing : float = 1.15) -> None:
 
         """
         Creates a text box object. Text generates within the box in a wrapping pattern based on parameters.
         :param text: sets the text to be displayed in the object. May be a string of any length.
-        :param font: the font which the text will be displayed in. Defaults to Lucida Console 16.
+        :param border: sets the apearance of a rectangular border around the text, useful for placing text boxes.
+        :param typeFace: the string name or string set of names seperated by commas that are font names on the system. Defaults to Arial.
+        :param size: the int point size of the font. Defaults to 12.
+        :param color: the pygame colorlike which defines the text's color, defaults to black
+        :param italic: boolean, whether or not the text is italic, defaults to False
+        :param bold: boolean, whether or not the text should appear bold, defaults to True
         :param align: see further documentation. Defaults to "left-top".
         :param padding: the pixel distance from the boundary rect to the text. Defaults to 20
         :param spacing: as in any word processor, the line spacing. Must be between 1 and 3 inclusive. Defaults to 1.15
@@ -316,10 +323,19 @@ class TextBox(Item):
         
         self.border = border
         self.text = text
-        self.font = font
+        self.typeFace = typeFace
+        self.bold = bold
+        self.italic = italic
+        self.fontPath = pygame.font.match_font(self.typeFace, self.bold, self.italic)
+        ###### Non-Lethal Error ######
+        if self.fontPath == None:
+            self.fontPath = pygame.font.match_font('Arial')
+        self.font = pygame.font.Font(self.fontPath, size = size)
         self.visible = True
         self.align = "left-top"
         self.padding = padding
+        self.color = color
+        
         
         self.validAligns = ['left-top', 'center-top', 'right-top',
                             'left-middle', 'center-middle', 'right-middle',
@@ -336,17 +352,19 @@ class TextBox(Item):
         if 1 <= spacing <= 3:
             self.spacing = spacing
         else:
+            ######## Non-Lethal Error ######
             print('Spacing must be between 1 and 3 inclusive. Defaulted to 1.15.')
             self.spacing = 1.15
         
         if align in self.validAligns:
             self.align = align
         else:
+            ######## Non-Lethal Error ######
             print('Not a valid align, try .getValidAligns() to get a list of valid aligns.')
             print('Defaulted to left-top')
             self.align = 'left-top'
 
-        super().__init__(app, x, y, width, height, (0, 0, 0))
+        super().__init__(app, x, y, width, height, self.color)
     
     def getValidAligns(self) -> list:
         "Returns a list of valid alignments for the TextBox object"
@@ -387,7 +405,7 @@ class TextBox(Item):
         totalHeight = ((len(lines)) * lineSpacing)
         lineY = eval(self.verticalAlignDict[textAlignments[1]])
         for line in lines:
-            lineSurface = self.font.render(line, True, (0, 0, 0))
+            lineSurface = self.font.render(line, True, self.color)
             lineX = eval(self.horizontalAlignDict[textAlignments[0]])
             surface.blit(lineSurface, (lineX, lineY))
             lineY += lineSpacing
