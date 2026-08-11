@@ -1,4 +1,5 @@
 import pygame
+import os
 
 pygame.font.init()
 DEFAULT_FONT = pygame.font.SysFont('lucidaconsole', 16)
@@ -342,12 +343,12 @@ class TextBox(Item):
         self.bold = bold
         self.italic = italic
         if self.typeFace == 'Deja Vu Sans':
-            self.fontPath = r"fonts\DejaVuSans.ttf"
+            self.fontPath = os.path.join("fonts", "DejaVuSans.ttf")
         else:
             self.fontPath = pygame.font.match_font(self.typeFace, self.bold, self.italic)
         ###### Non-Lethal Error ######
         if self.fontPath == None:
-            self.fontPath = r"fonts\DejaVuSans.ttf"
+            self.fontPath = os.path.join("fonts", "DejaVuSans.ttf")
         self.font = pygame.font.Font(self.fontPath, size = size)
         self.visible = True
         self.align = "left-top"
