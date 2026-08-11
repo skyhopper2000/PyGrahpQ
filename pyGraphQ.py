@@ -1,4 +1,5 @@
 import pygame
+import os
 
 pygame.font.init()
 DEFAULT_FONT = pygame.font.SysFont('lucidaconsole', 16)
@@ -126,7 +127,7 @@ class App():
                 self.group.add(obj)
         self.groups[name].add(objects)
     
-    def on(self, event : str) -> function:
+    def on(self, event : str):
         """Decorator: register a function to fire when `event` occurs."""
         def decorator(func):
             self.eventHandlers.setdefault(event, []).append(func) # Gives function a callable key
@@ -317,7 +318,7 @@ class Timer(Item):
 class TextBox(Item):
 
     def __init__(self, app: App, x : int, y : int, width : int, height : int,
-                 text : str, border : Border | None = None, typeFace : str = 'Arial', size : int = 12, 
+                 text : str, border : Border | None = None, typeFace : str = 'Deja Vu Sans', size : int = 12, 
                  color : pygame.typing.ColorLike = (0, 0, 0), italic : bool = False, bold : bool = False,
                  align : str = "left-top", padding : int = 20, spacing : float = 1.15) -> None:
 
@@ -325,7 +326,7 @@ class TextBox(Item):
         Creates a text box object. Text generates within the box in a wrapping pattern based on parameters.
         :param text: sets the text to be displayed in the object. May be a string of any length.
         :param border: sets the apearance of a rectangular border around the text, useful for placing text boxes.
-        :param typeFace: the string name or string set of names seperated by commas that are font names on the system. Defaults to Arial.
+        :param typeFace: the string name or string set of names seperated by commas that are font names on the system. Defaults to Deja Vu Sans.
         :param size: the int point size of the font. Defaults to 12.
         :param color: the pygame colorlike which defines the text's color, defaults to black
         :param italic: boolean, whether or not the text is italic, defaults to False
@@ -341,10 +342,13 @@ class TextBox(Item):
         self.typeFace = typeFace
         self.bold = bold
         self.italic = italic
-        self.fontPath = pygame.font.match_font(self.typeFace, self.bold, self.italic)
+        if self.typeFace == 'Deja Vu Sans':
+            self.fontPath = os.path.join("fonts", "DejaVuSans.ttf")
+        else:
+            self.fontPath = pygame.font.match_font(self.typeFace, self.bold, self.italic)
         ###### Non-Lethal Error ######
         if self.fontPath == None:
-            self.fontPath = pygame.font.match_font('Arial')
+            self.fontPath = os.path.join("fonts", "DejaVuSans.ttf")
         self.font = pygame.font.Font(self.fontPath, size = size)
         self.visible = True
         self.align = "left-top"
