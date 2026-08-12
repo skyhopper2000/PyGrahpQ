@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "PyGrahpQ_skyhopper2000"
+version = "0.1.0"
+authors = [
+    {name="Quentin Frank", email="quentinfrank07@gmail.com"},
+]
+description = "A pygame-ce wrapper for simple graphics programming"
+readme = "README.md"
+requires_python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "pygame_ce>=2.5",
+]
