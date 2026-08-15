@@ -4,6 +4,102 @@ import os
 pygame.font.init()
 DEFAULT_FONT = pygame.font.SysFont('lucidaconsole', 16)
 
+class HitBox:
+
+    def __init__(self, app : App, surface : pygame.Surface, origin : pygame.typing.Point):
+         self.app = app
+         self.mask = pygame.mask.from_surface(surface, threshold = 0)
+         self.maskRect = self.mask.get_rect()
+         self.box = []
+         for y in range(self.maskRect.height):
+             for x in range(self.maskRect.width):
+                 if self.mask.get_at((x, y)) == 1:
+                     x0, y0 = origin
+                     self.box.append(((x0 + x), (y0 + y)))
+
+    def hitPoint(self, point : pygame.typing.Point) -> bool:
+        return (point in self.box)
+
+    def prettyMask(self) -> str:
+        "Returns a simple representation of the mask of the hitbox, where each pixel in the hitbox is either 1 or 0."
+        output = ""
+        for y in range(self.maskRect.height):
+            for x in range(self.maskRect.width):
+                output = output + str(self.mask.get_at((x, y)))
+            output = output + '\n'
+        return output
+
+
+class Border:
+    def __init__(self, width : int, color : pygame.typing.ColorLike):
+        self.color = color
+        if width == 0:
+            self.width = -1
+        else:
+            self.width = width
+
+class Item(pygame.sprite.Sprite):
+    def __init__(self, app : App, x : int, y : int, width : int, height : int, 
+                 fill : pygame.typing.ColorLike):
+        """
+        Simple base class for visual objects,
+        
+        :param x: leftmost pixel
+        :param y: rightmost pixel
+        :param width: width (right from the x) of object in pixels
+        :param height: height (down from the y) of the object in pixels
+        """
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.rect = pygame.Rect(x, y, width, height)
+
+        self.fill = fill
+
+        self.app = app
+        
+        self.visible = True
+
+        self.rotation = 0
+
+        self.surface = self.handleRotation()
+        self.surfaceRect = self.surface.get_rect()
+        self.hitBox = HitBox(self.app, self.surface, (self.x, self.y))
+
+        app.group.add(self)
+
+    def changeRotation(self, degrees : int):
+        rotation = (self.rotation + degrees) % 360
+        self.rotation = rotation
+        
+    def handleRotation(self) -> pygame.Surface:
+        screenSurface = pygame.Surface((self.rect.width, self.rect.height), flags = pygame.SRCALPHA)
+        self.render(screenSurface, (0, 0))
+        screenSurface = pygame.transform.rotate(screenSurface, self.rotation)
+        return screenSurface
+
+    def update(self, *args, **kwargs):
+        self.surface = self.handleRotation()
+        screenSurfaceRect = self.surface.get_rect()
+        correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
+        correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
+        self.surfaceRect = pygame.Rect(correctedLeft, correctedTop, screenSurfaceRect.width, screenSurfaceRect.height)
+        self.hitBox = HitBox(self.app, self.surface, (self.surfaceRect.left, self.surfaceRect.top))
+
+    def render(self, surface : pygame.Surface, destination : pygame.typing.Point):
+        """
+        Method which should render the Item to the given surface, at the given coordinates
+        """
+    
+    def draw(self):
+        """
+        Abstract method that all children classes should have,
+        should draw item to surface
+        """
+        pass
+
 class App():
     def __init__(self, 
                  icon : pygame.Surface = None, 
@@ -161,101 +257,7 @@ class App():
     def unpause(self):
         self.fps = self.basefps
 
-class HitBox:
 
-    def __init__(self, app : App, surface : pygame.Surface, origin : pygame.typing.Point):
-         self.app = app
-         self.mask = pygame.mask.from_surface(surface, threshold = 0)
-         self.maskRect = self.mask.get_rect()
-         self.box = []
-         for y in range(self.maskRect.height):
-             for x in range(self.maskRect.width):
-                 if self.mask.get_at((x, y)) == 1:
-                     x0, y0 = origin
-                     self.box.append(((x0 + x), (y0 + y)))
-
-    def hitPoint(self, point : pygame.typing.Point) -> bool:
-        return (point in self.box)
-
-    def prettyMask(self) -> str:
-        "Returns a simple representation of the mask of the hitbox, where each pixel in the hitbox is either 1 or 0."
-        output = ""
-        for y in range(self.maskRect.height):
-            for x in range(self.maskRect.width):
-                output = output + str(self.mask.get_at((x, y)))
-            output = output + '\n'
-        return output
-
-
-class Border:
-    def __init__(self, width : int, color : pygame.typing.ColorLike):
-        self.color = color
-        if width == 0:
-            self.width = -1
-        else:
-            self.width = width
-
-class Item(pygame.sprite.Sprite):
-    def __init__(self, app : App, x : int, y : int, width : int, height : int, 
-                 fill : pygame.typing.ColorLike):
-        """
-        Simple base class for visual objects,
-        
-        :param x: leftmost pixel
-        :param y: rightmost pixel
-        :param width: width (right from the x) of object in pixels
-        :param height: height (down from the y) of the object in pixels
-        """
-        super().__init__()
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.rect = pygame.Rect(x, y, width, height)
-
-        self.fill = fill
-
-        self.app = app
-        
-        self.visible = True
-
-        self.rotation = 0
-
-        self.surface = self.handleRotation()
-        self.surfaceRect = self.surface.get_rect()
-        self.hitBox = HitBox(self.app, self.surface, (self.x, self.y))
-
-        app.group.add(self)
-
-    def changeRotation(self, degrees : int):
-        rotation = (self.rotation + degrees) % 360
-        self.rotation = rotation
-        
-    def handleRotation(self) -> pygame.Surface:
-        screenSurface = pygame.Surface((self.rect.width, self.rect.height), flags = pygame.SRCALPHA)
-        self.render(screenSurface, (0, 0))
-        screenSurface = pygame.transform.rotate(screenSurface, self.rotation)
-        return screenSurface
-
-    def update(self, *args, **kwargs):
-        self.surface = self.handleRotation()
-        screenSurfaceRect = self.surface.get_rect()
-        correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
-        correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
-        self.surfaceRect = pygame.Rect(correctedLeft, correctedTop, screenSurfaceRect.width, screenSurfaceRect.height)
-        self.hitBox = HitBox(self.app, self.surface, (self.surfaceRect.left, self.surfaceRect.top))
-
-    def render(self, surface : pygame.Surface, destination : pygame.typing.Point):
-        """
-        Method which should render the Item to the given surface, at the given coordinates
-        """
-    
-    def draw(self):
-        """
-        Abstract method that all children classes should have,
-        should draw item to surface
-        """
-        pass
 
 class Graphic(Item):
 
