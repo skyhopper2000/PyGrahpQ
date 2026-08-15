@@ -4,7 +4,8 @@ import os
 pygame.font.init()
 DEFAULT_FONT = pygame.font.SysFont('lucidaconsole', 16)
 
-class App():
+
+class App:
     def __init__(self, 
                  icon : pygame.Surface = None, 
                  name : str = 'Canvas', 
@@ -126,6 +127,14 @@ class App():
             if obj not in self.group:
                 self.group.add(obj)
         self.groups[name].add(objects)
+
+    def addButton(self, obj : pygame.sprite.Sprite, buttonName : str,
+                  hoverColor : pygame.typing.ColorLike | None, 
+                  pressedColor : pygame.typing.ColorLike | None) -> pygame.sprite.Sprite:
+
+        newButton = buttonOf(obj, buttonName, hoverColor, pressedColor)
+        self.groups['buttons'].add(newButton)
+        return newButton
     
     def on(self, event : str):
         """Decorator: register a function to fire when `event` occurs."""
@@ -243,6 +252,7 @@ class Item(pygame.sprite.Sprite):
         should draw item to surface
         """
         pass
+
 
 class Graphic(Item):
 
