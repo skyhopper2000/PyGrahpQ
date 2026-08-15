@@ -125,3 +125,26 @@ class TestTextBox:
         t1 = TextBox(self.app, 0, 0, 200, 200, 'foo', typeFace = 'Liberation Sans')
 
         assert t1.font.name == 'Liberation Sans'
+
+class TestButtons:
+
+    def setup_method(self, method):
+        pygame.font.init()
+        self.app = App()
+    
+    def teardown_method(self, method):
+        self.app.stop()
+        del self.app
+
+    def testGroupMembership(self):
+        r1 = Rectangle(self.app, 0, 0, 200, 200, 'red')
+        assert self.app.groups['buttons'].spritedict == {}
+        r2 = self.app.addButton(r1, 'foo', 'green', 'blue')
+        assert self.app.groups['buttons'].has(r2)
+
+    def testIsButton(self):
+
+        r1 = Rectangle(self.app, 0, 0, 200, 200, 'red')
+        r2 = Rectangle(self.app, 200, 200, 200, 200, 'black')
+        self.app.addButton(r1, 'foo', 'green', 'blue')
+        assert type(r2) != type(r1)
