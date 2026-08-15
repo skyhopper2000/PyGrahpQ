@@ -135,7 +135,7 @@ class App:
 
     def addButton(self, obj : pygame.sprite.Sprite, buttonName : str,
                   hoverColor : pygame.typing.ColorLike | None, 
-                  pressedColor : pygame.typing.ColorLike | None) -> Button:
+                  pressedColor : pygame.typing.ColorLike | None) -> pygame.sprite.Sprite:
 
         newButton = buttonOf(obj, buttonName, hoverColor, pressedColor)
         self.groups['buttons'].add(newButton)
