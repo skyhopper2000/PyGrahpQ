@@ -5,7 +5,7 @@ pygame.font.init()
 DEFAULT_FONT = pygame.font.SysFont('lucidaconsole', 16)
 
 
-class App():
+class App:
     def __init__(self, 
                  icon : pygame.Surface = None, 
                  name : str = 'Canvas', 
