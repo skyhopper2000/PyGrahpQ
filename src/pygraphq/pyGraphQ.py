@@ -134,9 +134,11 @@ class App():
 
     def addButton(self, obj : Item, buttonName : str,
                   hoverColor : pygame.typing.ColorLike | None, 
-                  pressedColor : pygame.typing.ColorLike | None):
-        
-        self.groups['buttons'].add(buttonOf(obj, buttonName, hoverColor, pressedColor))
+                  pressedColor : pygame.typing.ColorLike | None) -> Button:
+
+        newButton = buttonOf(obj, buttonName, hoverColor, pressedColor)
+        self.groups['buttons'].add(newButton)
+        return newButton
     
     def on(self, event : str):
         """Decorator: register a function to fire when `event` occurs."""
