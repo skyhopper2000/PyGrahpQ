@@ -62,6 +62,7 @@ class App():
         self.dt = 0.0
         self.tnaught = self.clock.get_time()
         self.keys = []
+        self.pressedButtons = []
 
         self.paused = False
         self.running = True
@@ -90,16 +91,20 @@ class App():
                     if event.button == 1:
                         self.mouseIsDown = True
                         self.fire('mouseDown', self, self.mouseX, self.mouseY)
+                        self.groups['buttons'].update()
+                        try:
+                            for button in self.groups['buttons'].sprites():
+                                if button.isPressed:
+                                    self.pressedButtons.append(button)
+                        except KeyError:
+                            pass
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
                         self.mouseIsDown = False
                         self.fire('mouseUp', self, self.mouseX, self.mouseY)
-                        try:
-                            for button in self.groups['buttons'].sprites():
-                                if button.isPressed:
-                                    button.fireClick(button)
-                        except KeyError:
-                            pass
+                        self.fire('buttonsRelease', self, self.pressedButtons)
+                        self.pressedButtons.clear()
+                        
                 if event.type == pygame.KEYDOWN:
                     self.keys.append(event.key)
                     self.fire('keyDown', self, event.key)
@@ -126,6 +131,12 @@ class App():
             if obj not in self.group:
                 self.group.add(obj)
         self.groups[name].add(objects)
+
+    def addButton(self, obj : Item, buttonName : str,
+                  hoverColor : pygame.typing.ColorLike | None, 
+                  pressedColor : pygame.typing.ColorLike | None):
+        
+        self.groups['buttons'].add(buttonOf(obj, buttonName, hoverColor, pressedColor))
     
     def on(self, event : str):
         """Decorator: register a function to fire when `event` occurs."""
@@ -658,7 +669,11 @@ class RoundRectangle(Rectangle):
         
 class Button:
 
-    def _init_button(self, hoverColor : pygame.typing.ColorLike, pressedColor : pygame.typing.ColorLike):
+    def _init_button(self, buttonName : str, 
+                     hoverColor : pygame.typing.ColorLike, 
+                     pressedColor : pygame.typing.ColorLike):
+
+        self.buttonName = buttonName
         self.hoverColor = hoverColor
         self.pressedColor = pressedColor
         self.releasedColor = getattr(self, 'fill')
@@ -680,21 +695,21 @@ class Button:
             self.fill = self.releasedColor
             self.isPressed = False
 
-    def onClicked(self):
-        """Decorator: register a function to fire when `event` occurs."""
-        def decorator(func):
-            self.whenClickedFunc.append(func) # Gives function a callable key
-            return func  # return unchanged so it's still normally callable
-        return decorator
+    # def onClicked(self):
+    #     """Decorator: register a function to fire when `event` occurs."""
+    #     def decorator(func):
+    #         self.whenClickedFunc.append(func) # Gives function a callable key
+    #         return func  # return unchanged so it's still normally callable
+    #     return decorator
     
-    def fireClick(self, *args, **kwargs):
-        """Call this internally when the event happens."""
-        for handler in self.whenClickedFunc:
-            handler(*args, **kwargs) # Calls any function that has the given 'event' key
+    # def fireClick(self, *args, **kwargs):
+    #     """Call this internally when the event happens."""
+    #     for handler in self.whenClickedFunc:
+    #         handler(*args, **kwargs) # Calls any function that has the given 'event' key
     
 
 
-def buttonOf(graphicsObject, hoverColor, pressedColor):
+def buttonOf(graphicsObject, name, hoverColor, pressedColor):
 
     "Dynamically creates a button out of any Item class object"
 
@@ -702,5 +717,5 @@ def buttonOf(graphicsObject, hoverColor, pressedColor):
     if Button not in cls.__mro__:
         cls = type('Button' + cls.__name__, (Button, cls), {})
         graphicsObject.__class__ = cls
-    graphicsObject._init_button(hoverColor, pressedColor)
+    graphicsObject._init_button(name, hoverColor, pressedColor)
     return graphicsObject
