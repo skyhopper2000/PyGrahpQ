@@ -66,6 +66,7 @@ class App:
 
         self.paused = False
         self.running = True
+        self.pressedButtons = []
         
         while self.running:
             self.step()
@@ -80,9 +81,12 @@ class App:
 
     def step(self) -> None:
         "Updates the state of the app by 1 frame. To change, use @app.on('step')"
-        
+
         self.mouseX, self.mouseY = pygame.mouse.get_pos()
         self.dt = (self.clock.get_time() - self.tnaught) / 1000
+
+        self.group.update()
+
         if not self.paused:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -91,16 +95,19 @@ class App:
                     if event.button == 1:
                         self.mouseIsDown = True
                         self.fire('mouseDown', self, self.mouseX, self.mouseY)
+                        try:
+                            for button in self.groups['buttons'].sprites():
+                                if button.hitBox.hitPoint((self.mouseX, self.mouseY)):
+                                    self.pressedButtons.append(button)
+                        except KeyError:
+                            pass        
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
                         self.mouseIsDown = False
                         self.fire('mouseUp', self, self.mouseX, self.mouseY)
-                        try:
-                            for button in self.groups['buttons'].sprites():
-                                if button.isPressed:
-                                    button.fireClick(button)
-                        except KeyError:
-                            pass
+                        if self.pressedButtons != []:
+                            self.fire('buttonsReleased', self, self.pressedButtons)
+                            self.pressedButtons = []
                 if event.type == pygame.KEYDOWN:
                     self.keys.append(event.key)
                     self.fire('keyDown', self, event.key)
@@ -668,9 +675,10 @@ class RoundRectangle(Rectangle):
         
 class Button:
 
-    def _init_button(self, hoverColor : pygame.typing.ColorLike, pressedColor : pygame.typing.ColorLike):
+    def _init_button(self, name: str, hoverColor : pygame.typing.ColorLike, pressedColor : pygame.typing.ColorLike):
         self.hoverColor = hoverColor
         self.pressedColor = pressedColor
+        self.buttonName = name
         self.releasedColor = getattr(self, 'fill')
         self.isPressed = False
         self.app.groups['buttons'].add(self)
@@ -690,21 +698,10 @@ class Button:
             self.fill = self.releasedColor
             self.isPressed = False
 
-    def onClicked(self):
-        """Decorator: register a function to fire when `event` occurs."""
-        def decorator(func):
-            self.whenClickedFunc.append(func) # Gives function a callable key
-            return func  # return unchanged so it's still normally callable
-        return decorator
-    
-    def fireClick(self, *args, **kwargs):
-        """Call this internally when the event happens."""
-        for handler in self.whenClickedFunc:
-            handler(*args, **kwargs) # Calls any function that has the given 'event' key
     
 
 
-def buttonOf(graphicsObject, hoverColor, pressedColor):
+def buttonOf(graphicsObject, name, hoverColor, pressedColor):
 
     "Dynamically creates a button out of any Item class object"
 
@@ -712,5 +709,5 @@ def buttonOf(graphicsObject, hoverColor, pressedColor):
     if Button not in cls.__mro__:
         cls = type('Button' + cls.__name__, (Button, cls), {})
         graphicsObject.__class__ = cls
-    graphicsObject._init_button(hoverColor, pressedColor)
+    graphicsObject._init_button(name, hoverColor, pressedColor)
     return graphicsObject
