@@ -2,6 +2,9 @@
 requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/pygraphq", "src/qutils"]
+
 [project]
 name = "PyGrahpQ_skyhopper2000"
 version = "0.1.0"
