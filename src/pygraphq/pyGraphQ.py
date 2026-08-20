@@ -1,9 +1,10 @@
 import pygame
 import os
+from importlib import resources
 
 pygame.font.init()
-DEFAULT_FONT = pygame.font.SysFont('lucidaconsole', 16)
 
+__all__ = ['App', 'HitBox', 'Border', 'Item', 'Graphic', 'TextBox', 'Rectangle', 'Circle', 'Ellipse', 'Line', 'RoundRectangle', 'Button']
 
 class App:
     def __init__(self, 
@@ -105,7 +106,10 @@ class App:
                     self.keys.append(event.key)
                     self.fire('keyDown', self, event.key)
                 if event.type == pygame.KEYUP:
-                    self.keys.remove(event.key)
+                    try:
+                        self.keys.remove(event.key)
+                    except ValueError:
+                        pass
                     self.fire('keyUp', self, event.key)
 
             self.fire('keyHold', self, self.keys)
@@ -132,7 +136,7 @@ class App:
                   hoverColor : pygame.typing.ColorLike | None, 
                   pressedColor : pygame.typing.ColorLike | None) -> pygame.sprite.Sprite:
 
-        newButton = buttonOf(obj, buttonName, hoverColor, pressedColor)
+        newButton = _buttonOf(obj, buttonName, hoverColor, pressedColor)
         self.groups['buttons'].add(newButton)
         return newButton
     
@@ -181,7 +185,6 @@ class HitBox:
                 output = output + str(self.mask.get_at((x, y)))
             output = output + '\n'
         return output
-
 
 class Border:
     def __init__(self, width : int, color : pygame.typing.ColorLike):
@@ -253,7 +256,6 @@ class Item(pygame.sprite.Sprite):
         """
         pass
 
-
 class Graphic(Item):
 
     def __init__(self, app : App, x : int, y : int, width : int, height : int,
@@ -272,58 +274,12 @@ class Graphic(Item):
         super().update()
 
     def render(self, surface : pygame.Surface, destination : pygame.typing.Point) -> None:
-            top, left = destination
-            alignedRect = pygame.Rect(top, left, self.width, self.height)
+            left, top = destination
+            alignedRect = pygame.Rect(left, top, self.width, self.height)
             surface.blit(self.sprite, alignedRect)
 
     def draw(self):
         self.app.screen.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
-
-class Timer(Item):
-    def __init__(self, app: App, x : int, y : int, width : int, height : int,
-                 initialValue : float, font : pygame.Font, color : pygame.typing.ColorLike = (0, 0, 0)):
-        """
-        Creates a model object which represents a timer.
-        """
-        super().__init__(app, x, y, width, height, color)
-        self.time = initialValue
-        self.font = font
-        self.color = color
-        self.paused = True
-    
-    def update(self, *args, **kwargs) -> None:
-        if not self.paused:
-            self.time -= self.app.dt
-    
-    def getTime(self) -> float:
-        return self.time
-    
-    def pause(self) -> None:
-        self.paused = True
-    
-    def unpause(self) -> None:
-        self.paused = False
-    
-    def reset(self) -> None:
-        self.time = 30.0
-
-    def getPrettyTime(self) -> str:
-        time = self.time
-        time = round(time, 2)
-        centiseconds = (time * 100) % 100
-        seconds = time % 100
-        csecString = str(round(centiseconds))
-        if len(csecString) < 2:
-            csecString = csecString + "0"
-        outString = str(round(seconds)) + ":" + csecString
-        return outString
-    
-    def draw(self) -> None:
-        #pygame.draw.rect(surface, (0,0,0), self.rect)
-        text = self.font.render(self.getPrettyTime(), True, self.color)
-        textRect = text.get_rect(center = self.rect.center)
-        self.app.screen.blit(text, textRect)
-        
 
 class TextBox(Item):
 
@@ -353,12 +309,16 @@ class TextBox(Item):
         self.bold = bold
         self.italic = italic
         if self.typeFace == 'Deja Vu Sans':
-            self.fontPath = os.path.join("fonts", "DejaVuSans.ttf")
+            reference = resources.files("src") / "fonts" / "DejaVuSans.ttf"
+            with resources.as_file(reference) as fontPath:
+                self.fontPath = fontPath
         else:
             self.fontPath = pygame.font.match_font(self.typeFace, self.bold, self.italic)
         ###### Non-Lethal Error ######
         if self.fontPath == None:
-            self.fontPath = os.path.join("fonts", "DejaVuSans.ttf")
+            reference = resources.files("src") / "fonts" / "DejaVuSans.ttf"
+            with resources.as_file(reference) as fontPath:
+                self.fontPath = fontPath
         self.font = pygame.font.Font(self.fontPath, size = size)
         self.visible = True
         self.align = "left-top"
@@ -370,13 +330,13 @@ class TextBox(Item):
                             'left-middle', 'center-middle', 'right-middle',
                             'left-bottom', 'center-bottom', 'right-bottom']
         
-        self.horizontalAlignDict = {'left' : 'renderingRect.left + self.padding',
-                                    'center' : 'renderingRect.centerx - (0.5 * lineSurface.get_width())',
-                                    'right' : 'renderingRect.right - lineSurface.get_width()'}
+        # self.horizontalAlignDict = {'left' : lambda left, padding: left + padding, # 'renderingRect.left + self.padding'
+        #                             'center' : lambda centerX, lineWidth: centerX - (0.5 * lineWidth), #'renderingRect.centerx - (0.5 * lineSurface.get_width())'
+        #                             'right' : 'renderingRect.right - lineSurface.get_width()'}
         
-        self.verticalAlignDict = {'top' : 'renderingRect.top',
-                                  'middle' : 'renderingRect.centery - (0.5 * totalHeight)',
-                                  'bottom' : 'renderingRect.bottom - totalHeight'}
+        # self.verticalAlignDict = {'top' : 'renderingRect.top',
+        #                           'middle' : 'renderingRect.centery - (0.5 * totalHeight)',
+        #                           'bottom' : 'renderingRect.bottom - totalHeight'}
         
         if 1 <= spacing <= 3:
             self.spacing = spacing
@@ -394,6 +354,26 @@ class TextBox(Item):
             self.align = 'left-top'
 
         super().__init__(app, x, y, width, height, self.color)
+
+    def _resolveVerticalAlign(self, align : str, renderingRect : pygame.typing.RectLike, totaHeight : int):
+        if align == 'top':
+            return renderingRect.top
+        elif align == 'middle':
+            return renderingRect.centery - (0.5 * totaHeight)
+        elif align == 'bottom':
+            return renderingRect.bottom - totaHeight
+        else:
+            return renderingRect.top
+
+    def _resolveHorizontalAlign(self, align : str, renderingRect : pygame.typing.RectLike, padding : int, lineWidth : int):
+        if align == 'left':
+            return renderingRect.left + padding
+        elif align == 'center':
+            return renderingRect.centerx - (0.5 * lineWidth)
+        elif align == 'right':
+            return renderingRect.right - lineWidth
+        else:
+            return renderingRect.left + padding
     
     def getValidAligns(self) -> list:
         "Returns a list of valid alignments for the TextBox object"
@@ -432,10 +412,10 @@ class TextBox(Item):
         # Draw wrapped lines
         textAlignments = self.align.split('-')
         totalHeight = ((len(lines)) * lineSpacing)
-        lineY = eval(self.verticalAlignDict[textAlignments[1]])
+        lineY = self._resolveVerticalAlign(textAlignments[1], renderingRect, totalHeight)
         for line in lines:
             lineSurface = self.font.render(line, True, self.color)
-            lineX = eval(self.horizontalAlignDict[textAlignments[0]])
+            lineX = self._resolveHorizontalAlign(textAlignments[0], renderingRect, self.padding, lineSurface.get_width())
             surface.blit(lineSurface, (lineX, lineY))
             lineY += lineSpacing
         if self.border != None:
@@ -467,7 +447,6 @@ class TextBox(Item):
             print('Defaulted to left-top')
             self.align = 'left-top'
 
-
 class Rectangle(Item):
 
     def __init__(self,
@@ -485,8 +464,8 @@ class Rectangle(Item):
         super().update()
         
     def render(self, surface : pygame.Surface, destination : pygame.typing.Point) -> None:
-        top, left = destination
-        alignedRect = pygame.Rect(top, left, self.width, self.height)
+        left, top = destination
+        alignedRect = pygame.Rect(left, top, self.width, self.height)
         pygame.draw.rect(surface, self.fill, alignedRect)
         if self.border != None:
             pygame.draw.rect(surface, self.border.color, alignedRect, width = self.border.width)
@@ -517,7 +496,7 @@ class Circle(Item):
         height = width
         self.radius = radius
         self.border = border
-        super().__init__(app, top, left, width, height, fill)
+        super().__init__(app, left, top, width, height, fill)
         
     
     def update(self):
@@ -541,7 +520,6 @@ class Circle(Item):
         "Set Circle to a different color"
         self.fill = fill
 
-
 class Ellipse(Item):
 
     def __init__(self,
@@ -560,8 +538,8 @@ class Ellipse(Item):
         super().update()
 
     def render(self, surface, destination):
-        top, left = destination
-        alignedRect = pygame.Rect(top, left, self.width, self.height)
+        left, top = destination
+        alignedRect = pygame.Rect(left, top, self.width, self.height)
         pygame.draw.ellipse(surface, self.fill, alignedRect)
         if self.border != None:
             pygame.draw.ellipse(surface, self.border.color, alignedRect, width = self.border.width)
@@ -654,8 +632,8 @@ class RoundRectangle(Rectangle):
 
         
     def render(self, surface : pygame.Surface, destination : pygame.typing.Point) -> None:
-        top, left = destination
-        alignedRect = pygame.Rect(top, left, self.width, self.height)
+        left, top = destination
+        alignedRect = pygame.Rect(left, top, self.width, self.height)
         pygame.draw.rect(surface, self.fill, alignedRect,
                          border_radius = self.roundness, border_top_left_radius = self.r1,
                          border_top_right_radius = self.r2, border_bottom_left_radius = self.r3,
@@ -668,9 +646,10 @@ class RoundRectangle(Rectangle):
         
 class Button:
 
-    def _init_button(self, hoverColor : pygame.typing.ColorLike, pressedColor : pygame.typing.ColorLike):
+    def _init_button(self, name: str, hoverColor : pygame.typing.ColorLike, pressedColor : pygame.typing.ColorLike):
         self.hoverColor = hoverColor
         self.pressedColor = pressedColor
+        self.buttonName = name
         self.releasedColor = getattr(self, 'fill')
         self.isPressed = False
         self.app.groups['buttons'].add(self)
@@ -704,7 +683,7 @@ class Button:
     
 
 
-def buttonOf(graphicsObject, hoverColor, pressedColor):
+def _buttonOf(graphicsObject, name, hoverColor, pressedColor):
 
     "Dynamically creates a button out of any Item class object"
 
@@ -712,5 +691,5 @@ def buttonOf(graphicsObject, hoverColor, pressedColor):
     if Button not in cls.__mro__:
         cls = type('Button' + cls.__name__, (Button, cls), {})
         graphicsObject.__class__ = cls
-    graphicsObject._init_button(hoverColor, pressedColor)
+    graphicsObject._init_button(name, hoverColor, pressedColor)
     return graphicsObject

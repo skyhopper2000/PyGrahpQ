@@ -13,7 +13,7 @@ authors = [
 ]
 description = "A pygame-ce wrapper for simple graphics programming"
 readme = "README.md"
-requires_python = ">=3.10"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
