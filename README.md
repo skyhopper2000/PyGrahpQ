@@ -10,7 +10,7 @@ These environments were really great for learning the basics of object oriented 
 So I decided I would build my own pygame-ce wrapper without guardrails so that I could break Python on my own.
 
 ## Depndencies
-1. Python (3.13.0+)
+1. Python (3.10.0+)
 2. pygame-ce (2.5.7+)
 
 ## Minimal implementation
