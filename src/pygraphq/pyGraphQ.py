@@ -62,7 +62,6 @@ class App:
         
         self.clock = pygame.time.Clock()
         self.dt = 0.0
-        self.tnaught = self.clock.get_time()
         self.keys = []
 
         self.paused = False
@@ -84,7 +83,7 @@ class App:
         "Updates the state of the app by 1 frame. To change, use @app.on('step')"
 
         self.mouseX, self.mouseY = pygame.mouse.get_pos()
-        self.dt = (self.clock.get_time() - self.tnaught) / 1000
+        self.dt = self.clock.get_time() / 1000
 
         self.group.update()
 
