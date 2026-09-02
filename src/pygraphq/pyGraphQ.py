@@ -227,7 +227,7 @@ class Item(pygame.sprite.Sprite):
 
         self.rotation = 0
 
-        self.surface = self.handleRotation()
+        self.surface = self.getSurface()
         self.surfaceRect = self.surface.get_rect()
         self.hitBox = HitBox(self.app, self.surface, (self.x, self.y))
 
@@ -237,14 +237,14 @@ class Item(pygame.sprite.Sprite):
         rotation = (self.rotation + degrees) % 360
         self.rotation = rotation
         
-    def handleRotation(self) -> pygame.Surface:
+    def getSurface(self) -> pygame.Surface:
         screenSurface = pygame.Surface((self.rect.width, self.rect.height), flags = pygame.SRCALPHA)
         self.render(screenSurface, (0, 0))
         screenSurface = pygame.transform.rotate(screenSurface, self.rotation)
         return screenSurface
 
     def update(self, *args, **kwargs):
-        self.surface = self.handleRotation()
+        self.surface = self.getSurface()
         screenSurfaceRect = self.surface.get_rect()
         correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
         correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
@@ -337,14 +337,6 @@ class TextBox(Item):
                             'left-middle', 'center-middle', 'right-middle',
                             'left-bottom', 'center-bottom', 'right-bottom']
         
-        # self.horizontalAlignDict = {'left' : lambda left, padding: left + padding, # 'renderingRect.left + self.padding'
-        #                             'center' : lambda centerX, lineWidth: centerX - (0.5 * lineWidth), #'renderingRect.centerx - (0.5 * lineSurface.get_width())'
-        #                             'right' : 'renderingRect.right - lineSurface.get_width()'}
-        
-        # self.verticalAlignDict = {'top' : 'renderingRect.top',
-        #                           'middle' : 'renderingRect.centery - (0.5 * totalHeight)',
-        #                           'bottom' : 'renderingRect.bottom - totalHeight'}
-        
         if 1 <= spacing <= 3:
             self.spacing = spacing
         else:
@@ -429,7 +421,7 @@ class TextBox(Item):
             pygame.draw.rect(surface, self.border.color, self.rect, width = self.border.width)
 
     def draw(self) -> None:
-        screenSurface = self.handleRotation()
+        screenSurface = self.getSurface()
         screenSurfaceRect = screenSurface.get_rect()
         correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
         correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
@@ -613,7 +605,8 @@ class RoundRectangle(Rectangle):
     def __init__(self,
                  app : App, x : int, y : int, width : int, height : int,
                  fill : pygame.typing.ColorLike = (0, 0, 0), roundness : int = 0,
-                 r1 : int = 0, r2 : int = 0, r3 : int = 0, r4 : int = 0):
+                 r1 : int = 0, r2 : int = 0, r3 : int = 0, r4 : int = 0,
+                 border : Border | None = None):
         
         """
         A class for drawing rects with rounded corners
@@ -633,9 +626,7 @@ class RoundRectangle(Rectangle):
         self.r3 = r3
         self.r4 = r4
         
-        super().__init__(app, x, y, width, height, fill)
-
-
+        super().__init__(app, x, y, width, height, fill, border)
 
         
     def render(self, surface : pygame.Surface, destination : pygame.typing.Point) -> None:
