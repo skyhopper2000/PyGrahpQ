@@ -23,3 +23,7 @@ license-files = ["LICEN[CS]E*"]
 dependencies = [
     "pygame_ce>=2.5",
 ]
+
+[project.urls]
+Homepage = "https://github.com/skyhopper2000/PyGrahpQ"
+Documentation = "https://docs.google.com/document/d/1OZu0WvRouwn1Um12VCGMPVQUPMMMDe5Wf73qNUpy9Ck/edit?usp=sharing"
