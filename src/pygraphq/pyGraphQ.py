@@ -226,9 +226,9 @@ class Item(pygame.sprite.Sprite):
 
         self.rotation = 0
 
-        self.surface = self.getSurface()
-        self.surfaceRect = self.surface.get_rect()
-        self.hitBox = HitBox(self.app, self.surface, (self.x, self.y))
+        # self.surface = self.getSurface()
+        # self.surfaceRect = self.surface.get_rect()
+        # self.hitBox = HitBox(self.app, self.surface, (self.x, self.y))
 
         app.group.add(self)
 
