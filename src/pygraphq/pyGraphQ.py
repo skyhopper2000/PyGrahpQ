@@ -77,7 +77,7 @@ class App:
         "Draws all objects in app.group to the screen in the order they were added to app.group"
         pygame.draw.rect(self.screen, self.background, self.rect) # draw Background
         for obj in self.group:
-            obj.draw()
+            obj.draw(self.screen)
 
     def step(self) -> None:
         "Updates the state of the app by 1 frame. To change, use @app.on('step')"
@@ -243,6 +243,7 @@ class Item(pygame.sprite.Sprite):
         return screenSurface
 
     def update(self, *args, **kwargs):
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.surface = self.getSurface()
         screenSurfaceRect = self.surface.get_rect()
         correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
@@ -255,10 +256,9 @@ class Item(pygame.sprite.Sprite):
         Method which should render the Item to the given surface, at the given coordinates
         """
     
-    def draw(self):
+    def draw(self, surface : pygame.Surface):
         """
-        Abstract method that all children classes should have,
-        should draw item to surface
+        Draws the Item Surface to the the given surface at the Item's position.
         """
         pass
 
@@ -284,8 +284,8 @@ class Graphic(Item):
             alignedRect = pygame.Rect(left, top, self.width, self.height)
             surface.blit(self.sprite, alignedRect)
 
-    def draw(self):
-        self.app.screen.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
+    def draw(self, surface : pygame.Surface):
+        surface.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
 
 class TextBox(Item):
 
@@ -419,17 +419,16 @@ class TextBox(Item):
         if self.border != None:
             pygame.draw.rect(surface, self.border.color, self.rect, width = self.border.width)
 
-    def draw(self) -> None:
+    def draw(self, surface : pygame.Surface) -> None:
         screenSurface = self.getSurface()
         screenSurfaceRect = screenSurface.get_rect()
         correctedLeft = self.rect.centerx - (0.5*(screenSurfaceRect.width))
         correctedTop = self.rect.centery - (0.5*(screenSurfaceRect.height))
-        self.app.screen.blit(screenSurface, (correctedLeft, correctedTop))
-            
-    
+        surface.blit(screenSurface, (correctedLeft, correctedTop))
+     
     def update(self):
         "No update on step"
-        pass
+        super().update()
 
     def setText(self, newText : str):
         "Method for resetting the string after initialization"
@@ -468,9 +467,9 @@ class Rectangle(Item):
         if self.border != None:
             pygame.draw.rect(surface, self.border.color, alignedRect, width = self.border.width)
 
-    def draw(self) -> None:
+    def draw(self, surface : pygame.Surface) -> None:
         "Renders the rectangle to its assigned app screen"
-        self.app.screen.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
+        surface.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
     
     def reColor(self, fill : pygame.typing.ColorLike = (0, 0, 0)) -> None:
         "Set rectangle to a different color"
@@ -496,7 +495,6 @@ class Circle(Item):
         self.border = border
         super().__init__(app, left, top, width, height, fill)
         
-    
     def update(self):
         "No update on step"
         super().update()
@@ -510,9 +508,9 @@ class Circle(Item):
             pygame.draw.circle(surface, self.border.color, (centerX, centerY), 
                                self.radius, width = self.border.width)
     
-    def draw(self):
+    def draw(self, surface : pygame.Surface):
         "Renders the circle to its assigned app screen"
-        self.app.screen.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
+        surface.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
     
     def reColor(self, fill : pygame.typing.ColorLike = (0, 0, 0)):
         "Set Circle to a different color"
@@ -542,9 +540,9 @@ class Ellipse(Item):
         if self.border != None:
             pygame.draw.ellipse(surface, self.border.color, alignedRect, width = self.border.width)
         
-    def draw(self):
+    def draw(self, surface : pygame.Surface):
         "Renders the ellipse to its assigned app screen"
-        self.app.screen.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
+        surface.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
     
     def reColor(self, fill : pygame.typing.ColorLike = (0, 0, 0)):
         "Set this ellipse to a different color"
@@ -591,9 +589,9 @@ class Line(Item):
         endPointY = destY + abs(self.y1 - self.y2)
         pygame.draw.line(surface, self.fill, (destX, destY), (endPointX, endPointY), width = self.lineWidth)
     
-    def draw(self):
+    def draw(self, surface : pygame.Surface):
         "Renders the line on its assigned app screen"
-        self.app.screen.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
+        surface.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
     
     def reColor(self, fill : pygame.typing.ColorLike = (0, 0, 0)):
         "Sets the color of line"
