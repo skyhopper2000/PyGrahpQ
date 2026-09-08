@@ -6,6 +6,7 @@ pygame.font.init()
 
 __all__ = ['App', 'HitBox', 'Border', 'Item', 'Graphic', 'TextBox', 'Rectangle', 'Circle', 'Ellipse', 'Line', 'RoundRectangle', 'Button']
 
+
 class App:
     def __init__(self, 
                  icon : pygame.Surface = None, 
@@ -109,14 +110,16 @@ class App:
                             self.fire('buttonsReleased', self, self.pressedButtons)
                             self.pressedButtons = []
                 if event.type == pygame.KEYDOWN:
-                    self.keys.append(event.key)
-                    self.fire('keyDown', self, event.key)
+                    keyName = pygame.key.name(event.key)
+                    self.keys.append(keyName)
+                    self.fire('keyDown', self, keyName)
                 if event.type == pygame.KEYUP:
+                    keyName = pygame.key.name(event.key)
                     try:
-                        self.keys.remove(event.key)
+                        self.keys.remove(keyName)
                     except ValueError:
                         pass
-                    self.fire('keyUp', self, event.key)
+                    self.fire('keyUp', self, keyName)
 
             self.fire('keyHold', self, self.keys)
             
