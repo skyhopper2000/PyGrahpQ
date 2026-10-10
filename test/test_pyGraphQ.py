@@ -4,7 +4,6 @@ import os
 
 class TestApp:
 
-
     def testInit(self):
         app = App()
         assert app.running == False
@@ -126,3 +125,18 @@ class TestTextBox:
         t1 = TextBox(self.app, 0, 0, 200, 200, 'foo', typeFace = 'Liberation Sans')
 
         assert t1.font.name == 'Liberation Sans'
+
+class TestPolyPointItem:
+
+    def setup_method(self, method):
+        pygame.font.init()
+        self.app = App()
+    
+    def teardown_method(self, method):
+        self.app.stop()
+        del self.app
+
+    def testInit(self):
+        l1 = Line(self.app, 0, 0, 400, 400)
+        assert l1.x1 == 0 
+        assert l1.points[0] == (0, 0)
