@@ -197,6 +197,12 @@ class HitBox:
 
 class Border:
     def __init__(self, width : int, color : pygame.typing.ColorLike):
+        """
+        A simple class for storing an object consisting of a color 
+        and width for the border of some Items.
+        :param width: An integer value with values < 1 creating no border
+        :param color: A pygame ColorLike which will be the color of the border drawn
+        """
         self.color = color
         if width == 0:
             self.width = -1
@@ -577,17 +583,19 @@ class Ellipse(RectangleItem):
 
 class PolyPointItem(Item):
 
-    def __init__(self, app : App, points : list[pygame.typing.Point], lineWidth : int, color : pygame.typing.ColorLike):
+    def __init__(self, 
+                 app : App, 
+                 points : list[pygame.typing.Point], 
+                 lineWidth : int, 
+                 color : pygame.typing.ColorLike):
         """
-        Defines any graphic object which is defined by a series of independent points
+        Parent class for any graphic object which is defined by a series of independent points
         """
         # Error Handling
         if len(points) == 0:
             raise ValueError("Number of points may not be 0")
 
         # Setup
-        left, top = points[0]
-        right, bottom = 0, 0
         self.xList = []
         self.yList = []
 
@@ -598,11 +606,18 @@ class PolyPointItem(Item):
 
         self.xList.sort()
         self.yList.sort()
-        super().__init__(app, left, top, right - left, bottom - top, color)
+        # Assumption, the leftmost coordinate will be at the first index of 
+        # the sorted list while the rightmost will be at the last index. Same
+        # in the y direction 
+        super().__init__(app, self.xList[0], self.yList[0],
+                          self.xList[len(self.xList) - 1] - self.xList[0], 
+                          self.yList[len(self.yList) - 1] - self.yList[0], 
+                          color)
         self.points = points
 
     def getSurface(self):
         return super().getSurface()
+        
 
     def update(self):
         self.xList.sort()
@@ -611,14 +626,14 @@ class PolyPointItem(Item):
         # Temp variables
         left = self.xList[0]
         top = self.yList[0]
-        right = self.xList[len(self.xList)]
-        bottom = self.yList[len(self.yList)]
+        right = self.xList[len(self.xList) - 1]
+        bottom = self.yList[len(self.yList) - 1]
 
         self.rect = pygame.Rect(left, top, right - left, bottom - top)
 
         self.surface = self.getSurface()
         self.surfaceRect = pygame.Rect(left, top, right - left, bottom - top)
-        self.hitBox = HitBox(self.app, self.surface, (self.rect.left, self.rect.right))
+        self.hitBox = HitBox(self.app, self.surface, (self.rect.left, self.rect.top))
 
 
 class Line(PolyPointItem):
@@ -654,10 +669,18 @@ class Line(PolyPointItem):
         super().update()
 
     def render(self, surface, destination):
-        destX, destY = destination
-        endPointX = destX + abs(self.x1 - self.x2)
-        endPointY = destY + abs(self.y1 - self.y2)
-        pygame.draw.line(surface, self.fill, (destX, destY), (endPointX, endPointY), width = self.lineWidth)
+
+        #Establish relative positions
+        desX, desY = destination
+        relX1 = abs(self.x1 - (self.rect.left + desX))
+        relY1 = abs(self.y1 - (self.rect.top + desY))
+        relX2 = abs(self.x2 - (self.rect.left + desX))
+        relY2 = abs(self.y2 - (self.rect.top + desY))
+
+        pygame.draw.line(surface, self.fill, 
+                         (relX1, relY1), 
+                         (relX2, relY2), 
+                         width = self.lineWidth)
     
     def draw(self, surface : pygame.Surface):
         "Renders the line on its assigned app screen"
