@@ -68,6 +68,8 @@ class App:
         self.paused = False
         self.running = True
         self.pressedButtons = []
+
+        self.fire("start", self)
         
         while self.running:
             self.step()
@@ -77,6 +79,7 @@ class App:
     def redrawAll(self) -> None:
         "Draws all objects in app.group to the screen in the order they were added to app.group"
         pygame.draw.rect(self.screen, self.background, self.rect) # draw Background
+        self.fire("redrawAll")
         for obj in self.group:
             obj.draw(self.screen)
 
