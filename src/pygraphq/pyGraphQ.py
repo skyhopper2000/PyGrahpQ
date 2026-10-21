@@ -200,6 +200,12 @@ class HitBox:
 
 class Border:
     def __init__(self, width : int, color : pygame.typing.ColorLike):
+        """
+        A simple class for storing an object consisting of a color 
+        and width for the border of some Items.
+        :param width: An integer value with values < 1 creating no border
+        :param color: A pygame ColorLike which will be the color of the border drawn
+        """
         self.color = color
         if width == 0:
             self.width = -1
@@ -237,18 +243,53 @@ class Item(pygame.sprite.Sprite):
         # self.hitBox = HitBox(self.app, self.surface, (self.x, self.y))
 
         app.group.add(self)
+        
+    def getSurface(self) -> pygame.Surface:
+        """
+        Method that creates and returns a surface based on the current state of the Item.
+        """
+        screenSurface = pygame.Surface((self.rect.width, self.rect.height), flags = pygame.SRCALPHA)
+        self.render(screenSurface, (0, 0))
+        return screenSurface
+
+    def update(self):
+        """
+        A method that updates the attributes of the Item.
+        This called by app.onStep()
+        :param *args: allows for passing in of arguments used by subclasses.
+        :param **kwargs: if attributes of this Item passed as keywords, will update the Item attribute to the argument value.
+        """
+
+    def render(self, surface : pygame.Surface, destination : pygame.typing.Point):
+        """
+        Method which should render the Item to the given surface, at the given coordinates.
+        :param surface: the surface onto which the shape is being rendered
+        :param destination: the left-top coordinate where the shape will be positioned on the sub surface
+        """
+    
+    def draw(self, surface : pygame.Surface):
+        """
+        Draws the Item Surface to the the given surface at the Item's position.
+        :param surface: The surface onto which the Item Surface will be drawn.
+        """
+
+class RectangleItem(Item):
+
+    def __init__(self, app : App, x : int, y : int, width : int, height : int, 
+                 fill : pygame.typing.ColorLike):
+        
+        super().__init__(app, x, y, width, height, fill)
 
     def changeRotation(self, degrees : int):
         rotation = (self.rotation + degrees) % 360
         self.rotation = rotation
         
     def getSurface(self) -> pygame.Surface:
-        screenSurface = pygame.Surface((self.rect.width, self.rect.height), flags = pygame.SRCALPHA)
-        self.render(screenSurface, (0, 0))
+        screenSurface = super().getSurface()
         screenSurface = pygame.transform.rotate(screenSurface, self.rotation)
         return screenSurface
 
-    def update(self, *args, **kwargs):
+    def update(self):
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.surface = self.getSurface()
         screenSurfaceRect = self.surface.get_rect()
@@ -257,18 +298,7 @@ class Item(pygame.sprite.Sprite):
         self.surfaceRect = pygame.Rect(correctedLeft, correctedTop, screenSurfaceRect.width, screenSurfaceRect.height)
         self.hitBox = HitBox(self.app, self.surface, (self.surfaceRect.left, self.surfaceRect.top))
 
-    def render(self, surface : pygame.Surface, destination : pygame.typing.Point):
-        """
-        Method which should render the Item to the given surface, at the given coordinates
-        """
-    
-    def draw(self, surface : pygame.Surface):
-        """
-        Draws the Item Surface to the the given surface at the Item's position.
-        """
-        pass
-
-class Graphic(Item):
+class Graphic(RectangleItem):
 
     def __init__(self, app : App, x : int, y : int, width : int, height : int,
                  sprite : pygame.Surface):
@@ -282,7 +312,7 @@ class Graphic(Item):
         else:
             self.sprite = sprite
 
-    def update(self, *args, **kwargs):
+    def update(self):
         super().update()
 
     def render(self, surface : pygame.Surface, destination : pygame.typing.Point) -> None:
@@ -293,7 +323,7 @@ class Graphic(Item):
     def draw(self, surface : pygame.Surface):
         surface.blit(self.surface, (self.surfaceRect.left, self.surfaceRect.top))
 
-class TextBox(Item):
+class TextBox(RectangleItem):
 
     def __init__(self, app: App, x : int, y : int, width : int, height : int,
                  text : str, border : Border | None = None, typeFace : str = 'Deja Vu Sans', size : int = 12, 
@@ -450,7 +480,7 @@ class TextBox(Item):
             print('Defaulted to left-top')
             self.align = 'left-top'
 
-class Rectangle(Item):
+class Rectangle(RectangleItem):
 
     def __init__(self,
                  app : App, x : int, y : int, width : int, height : int,
@@ -481,7 +511,7 @@ class Rectangle(Item):
         "Set rectangle to a different color"
         self.fill = fill
 
-class Circle(Item):
+class Circle(RectangleItem):
 
     def __init__(self,
                  app : App, centerX : int, centerY : int, radius : int,
@@ -522,7 +552,7 @@ class Circle(Item):
         "Set Circle to a different color"
         self.fill = fill
 
-class Ellipse(Item):
+class Ellipse(RectangleItem):
 
     def __init__(self,
                  app : App, x : int, y : int, width : int, height : int,
@@ -535,7 +565,7 @@ class Ellipse(Item):
         self.border = border
         super().__init__(app, x, y, width, height, fill)
     
-    def update(self, *args, **kwargs):
+    def update(self):
 
         super().update()
 
@@ -554,8 +584,62 @@ class Ellipse(Item):
         "Set this ellipse to a different color"
         self.fill = fill
 
-###### Is broken, needs fixed
-class Line(Item):
+class PolyPointItem(Item):
+
+    def __init__(self, 
+                 app : App, 
+                 points : list[pygame.typing.Point], 
+                 lineWidth : int, 
+                 color : pygame.typing.ColorLike):
+        """
+        Parent class for any graphic object which is defined by a series of independent points
+        """
+        # Error Handling
+        if len(points) == 0:
+            raise ValueError("Number of points may not be 0")
+
+        # Setup
+        self.xList = []
+        self.yList = []
+
+        for point in points:
+            x, y = point
+            self.xList.append(x)
+            self.yList.append(y)
+
+        self.xList.sort()
+        self.yList.sort()
+        # Assumption, the leftmost coordinate will be at the first index of 
+        # the sorted list while the rightmost will be at the last index. Same
+        # in the y direction 
+        super().__init__(app, self.xList[0], self.yList[0],
+                          self.xList[len(self.xList) - 1] - self.xList[0], 
+                          self.yList[len(self.yList) - 1] - self.yList[0], 
+                          color)
+        self.points = points
+
+    def getSurface(self):
+        return super().getSurface()
+        
+
+    def update(self):
+        self.xList.sort()
+        self.yList.sort()
+
+        # Temp variables
+        left = self.xList[0]
+        top = self.yList[0]
+        right = self.xList[len(self.xList) - 1]
+        bottom = self.yList[len(self.yList) - 1]
+
+        self.rect = pygame.Rect(left, top, right - left, bottom - top)
+
+        self.surface = self.getSurface()
+        self.surfaceRect = pygame.Rect(left, top, right - left, bottom - top)
+        self.hitBox = HitBox(self.app, self.surface, (self.rect.left, self.rect.top))
+
+
+class Line(PolyPointItem):
 
     def __init__(self,
                  app : App, x1 : int, y1 : int, x2 : int, y2 : int,
@@ -572,8 +656,6 @@ class Line(Item):
         """
 
         self.lineWidth = lineWidth
-        rectWidth = abs(x1 - x2) + lineWidth
-        rectHeight = abs(y1 - y2) + lineWidth
 
         self.x1 = x1
         self.y1 = y1
@@ -583,18 +665,25 @@ class Line(Item):
         self.startPoint = (x1, y1) # local information
         self.endPoint = (x2, y2) # local information
         
-        boundingRect = pygame.Rect((x1, y1), (rectWidth, rectHeight))
-        super().__init__(app, boundingRect.left, boundingRect.top, boundingRect.width, boundingRect.height, color)
+        super().__init__(app, [(x1, y1), (x2, y2)], lineWidth, color)
 
     def update(self):
         
         super().update()
 
     def render(self, surface, destination):
-        destX, destY = destination
-        endPointX = destX + abs(self.x1 - self.x2)
-        endPointY = destY + abs(self.y1 - self.y2)
-        pygame.draw.line(surface, self.fill, (destX, destY), (endPointX, endPointY), width = self.lineWidth)
+
+        #Establish relative positions
+        desX, desY = destination
+        relX1 = abs(self.x1 - (self.rect.left + desX))
+        relY1 = abs(self.y1 - (self.rect.top + desY))
+        relX2 = abs(self.x2 - (self.rect.left + desX))
+        relY2 = abs(self.y2 - (self.rect.top + desY))
+
+        pygame.draw.line(surface, self.fill, 
+                         (relX1, relY1), 
+                         (relX2, relY2), 
+                         width = self.lineWidth)
     
     def draw(self, surface : pygame.Surface):
         "Renders the line on its assigned app screen"

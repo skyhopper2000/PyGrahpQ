@@ -1,9 +1,9 @@
 from src.pygraphq import *
+import pytest
 import pygame
 import os
 
 class TestApp:
-
 
     def testInit(self):
         app = App()
@@ -126,3 +126,39 @@ class TestTextBox:
         t1 = TextBox(self.app, 0, 0, 200, 200, 'foo', typeFace = 'Liberation Sans')
 
         assert t1.font.name == 'Liberation Sans'
+
+class TestPolyPointItem:
+
+    def setup_method(self, method):
+        pygame.font.init()
+        self.app = App()
+    
+    def teardown_method(self, method):
+        self.app.stop()
+        del self.app
+
+    def testInit(self):
+        l1 = Line(self.app, 0, 0, 400, 400, lineWidth = 5, color = (125, 125, 125))
+        assert l1.x1 == 0 
+        assert l1.points[0] == (0, 0)
+        assert l1.rect.left == 0
+        assert l1.rect.bottom == 400
+        with pytest.raises(AttributeError):
+            assert l1.left == 0
+        assert l1.fill == pygame.Color(125, 125, 125)
+    
+
+
+    def testCollision(self):
+        l1 = Line(self.app, 0, 0, 200, 200, color = (0, 255, 0))
+        self.app.steps = 0
+        @self.app.on('step')
+        def onStep(appItself : App):
+            if appItself.steps > 0:
+                assert appItself.group.sprites()[0].hitBox.hitPoint((0, 0)) == True #collision with top-left of line
+                assert appItself.group.sprites()[0].hitBox.hitPoint((199, 199)) == True #collision in bottom-right of line
+                assert appItself.group.sprites()[0].hitBox.hitPoint((50, 52)) == False #no collision just off-line
+                assert appItself.group.sprites()[0].hitBox.hitPoint((200, 200)) == False #no collision just off right edge of rect
+                appItself.stop()
+            self.app.steps += 1
+        self.app.start()
