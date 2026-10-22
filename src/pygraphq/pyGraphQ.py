@@ -168,10 +168,10 @@ class App:
         self.running = False
 
     def pause(self):
-        self.fps = 0
+        self.paused = True
 
     def unpause(self):
-        self.fps = self.basefps
+        self.paused = False
 
 class HitBox:
 
@@ -351,14 +351,14 @@ class TextBox(RectangleItem):
         self.bold = bold
         self.italic = italic
         if self.typeFace == 'Deja Vu Sans':
-            reference = resources.files("src") / "fonts" / "DejaVuSans.ttf"
+            reference = resources.files("pygraphq") / "fonts" / "DejaVuSans.ttf"
             with resources.as_file(reference) as fontPath:
                 self.fontPath = fontPath
         else:
             self.fontPath = pygame.font.match_font(self.typeFace, self.bold, self.italic)
         ###### Non-Lethal Error ######
         if self.fontPath == None:
-            reference = resources.files("src") / "fonts" / "DejaVuSans.ttf"
+            reference = resources.files("pygraphq") / "fonts" / "DejaVuSans.ttf"
             with resources.as_file(reference) as fontPath:
                 self.fontPath = fontPath
         self.font = pygame.font.Font(self.fontPath, size = size)
