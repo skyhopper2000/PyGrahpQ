@@ -1,4 +1,4 @@
-from src.pygraphq import *
+from pygraphq import *
 import pytest
 import pygame
 import os
@@ -115,8 +115,8 @@ class TestTextBox:
 
     def testCallGetTypeFace(self, mocker):
         
-        mockedOut = mocker.patch("src.pygraphq.pyGraphQ.pygame.font.match_font")
-        mockedOut.return_value = os.path.join("src", "fonts", "YoungSerif-Regular.ttf")
+        mockedOut = mocker.patch("pygraphq.pyGraphQ.pygame.font.match_font", return_value = "dummy.ttf")
+        mocker.patch("pygraphq.pyGraphQ.pygame.font.Font")
 
         t1 = TextBox(self.app, 0, 0, 200, 200, 'foo', typeFace = 'Young Serif')
 
