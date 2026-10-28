@@ -4,7 +4,20 @@ from importlib import resources
 
 pygame.font.init()
 
-__all__ = ['App', 'HitBox', 'Border', 'Item', 'Graphic', 'TextBox', 'Rectangle', 'Circle', 'Ellipse', 'Line', 'RoundRectangle', 'Button']
+__all__ = ['App', 
+           'HitBox', 
+           'Border', 
+           'Item',
+                'RectangleItem', 
+                    'Graphic', 
+                    'TextBox', 
+                    'Rectangle', 
+                        'RoundRectangle', 
+                    'Circle', 
+                    'Ellipse', 
+                'PolyPointItem',
+                    'Line', 
+                    'Button']
 
 
 class App:
@@ -487,6 +500,7 @@ class Rectangle(RectangleItem):
                  fill : pygame.typing.ColorLike = (0, 0, 0), border : Border | None = None) -> None:
         """
         Class for drawing rectangles with straight edges.
+        
         :param fill: The color in which the rectangle is drawn. Defaults to black.
         """
         self.border = border
