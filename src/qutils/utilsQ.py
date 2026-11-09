@@ -12,6 +12,3 @@ def lilLoad(relative_path: str) -> pygame.Surface:
 
     path =  os.path.join(base_path, relative_path)
     return pygame.image.load(path)
-
-def timeout(timer : float) -> bool:
-    return (timer == 0.0)

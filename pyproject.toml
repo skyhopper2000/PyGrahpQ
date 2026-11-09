@@ -5,26 +5,36 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/pygraphq"]
 
-[project.optional-dependencies]
-dev = ["pytest", "pytest-mock"]
+[dependency-groups]
+dev = ["pytest>=9", "pytest-mock>=3.14", "validate-pyproject"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/.github", "/requirements.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+addopts = ["-ra", "--strict-markers"]
 
 [project]
-name = "PyGrahpQ_skyhopper2000"
+name = "PyGraphQ"
 version = "0.1.0"
 authors = [
     {name="Quentin Frank", email="quentinfrank07@gmail.com"},
 ]
 description = "A pygame-ce wrapper for simple graphics programming"
 readme = "README.md"
-requires-python = ">=3.10"
+requires_python = ">=3.10"
+keywords = ["pygame", "graphics", "gui", "education", "game"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Software Development :: Libraries :: pygame",
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
-    "pygame_ce>=2.5",
+    "pygame_ce>=2.5.2",
 ]
 
 [project.urls]
