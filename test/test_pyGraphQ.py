@@ -21,14 +21,14 @@ class TestApp:
     def testStart(self):
         app = App(name = 'foo', screenWidth = 600, screenHeight = 2, background=(0, 0, 255), fps = 30)
 
-        @app.on('step')
+        @app.ticker(30)
         def onStep(app : App):
             assert app.running == True
             assert app.screen.width == 600
             assert app.screen.height == 2
             app.redrawAll()
             assert app.screen.get_at((0, 0)) == pygame.Color(0, 0, 255)
-            app.running = False
+            app.stop()
 
         app.start()
 
