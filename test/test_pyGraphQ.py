@@ -21,14 +21,14 @@ class TestApp:
     def testStart(self):
         app = App(name = 'foo', screenWidth = 600, screenHeight = 2, background=(0, 0, 255), fps = 30)
 
-        @app.on('step')
+        @app.ticker(30)
         def onStep(app : App):
             assert app.running == True
             assert app.screen.width == 600
             assert app.screen.height == 2
             app.redrawAll()
             assert app.screen.get_at((0, 0)) == pygame.Color(0, 0, 255)
-            app.running = False
+            app.stop()
 
         app.start()
 
@@ -37,7 +37,7 @@ class TestApp:
 
         app.stepsToDown = 2
 
-        @app.on('step')
+        @app.ticker()
         def onStep(app : App):
                 
             if app.stepsToDown <= 0:
@@ -47,6 +47,23 @@ class TestApp:
             app.stepsToDown -= 1
 
         app.start()
+
+    def testTicker(self):
+        app = App(fps = 30)
+
+        with pytest.raises(ValueError) as e1:
+            @app.ticker(0)
+            def onStep(appItself):
+                pass
+
+        assert str(e1.value) == "ticksPerSecond must be positive"
+
+        with pytest.raises(ValueError) as e2:
+            @app.ticker(60)
+            def onStep(appItself):
+                pass
+
+        assert str(e2.value) == "ticksPerSecond must be less than app.fps"
 
 class TestRectangle:
 
@@ -62,12 +79,16 @@ class TestRectangle:
         assert r1.rect.left == 0
         assert r1.rect.top == 0
         assert r1.rect.center == (100, 100)
+        assert hasattr(r1, "surface")
+        assert r1.surface == None
+        assert hasattr(r1, "hitBox")
+        assert hasattr(r1, "surfaceRect")
 
     def testVisual(self):
         r1 = Rectangle(self.app, 0, 0, 200, 200, fill = (0, 255, 0))
         self.app.steps = 0
 
-        @self.app.on('step')
+        @self.app.ticker()
         def onStep(appItself : App):
             if appItself.steps > 0:
                 assert appItself.screen.get_at((0, 0)) == pygame.Color(0, 255, 0)
@@ -83,7 +104,7 @@ class TestRectangle:
         r1 = Rectangle(self.app, 0, 0, 200, 200, fill = (0, 255, 0))
         self.app.steps = 0
         
-        @self.app.on('step')
+        @self.app.ticker()
         def onStep(appItself : App):
             if appItself.steps > 0:
                 assert appItself.group.sprites()[0].hitBox.hitPoint((0, 0)) == True #collision with top-left of rect
@@ -152,7 +173,7 @@ class TestPolyPointItem:
     def testCollision(self):
         l1 = Line(self.app, 0, 0, 200, 200, color = (0, 255, 0))
         self.app.steps = 0
-        @self.app.on('step')
+        @self.app.ticker()
         def onStep(appItself : App):
             if appItself.steps > 0:
                 assert appItself.group.sprites()[0].hitBox.hitPoint((0, 0)) == True #collision with top-left of line

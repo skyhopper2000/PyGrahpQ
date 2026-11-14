@@ -76,6 +76,7 @@ class App:
         
         self.clock = pygame.time.Clock()
         self.dt = 0.0
+        self.frame = 0 #uncapped bt should reasonably stay within 64 bits for any legitimate purpose
         self.keys = []
 
         self.paused = False
@@ -101,6 +102,8 @@ class App:
 
         self.mouseX, self.mouseY = pygame.mouse.get_pos()
         self.dt = self.clock.get_time() / 1000
+
+        self.fire('tick', self)
 
         self.group.update()
 
@@ -138,8 +141,6 @@ class App:
                     self.fire('keyUp', self, keyName)
 
             self.fire('keyHold', self, self.keys)
-            
-            self.fire('step', self)
 
             self.group.update()
 
@@ -148,6 +149,7 @@ class App:
             pygame.display.flip()
 
         self.clock.tick(self.fps)
+        self.frame += 1
 
     def addGroup(self, name : str, objects : list) -> None:
         "Adds a new group to app.groups, assigned as 'name' : [objects]"
@@ -167,10 +169,31 @@ class App:
     
     def on(self, event : str):
         """Decorator: register a function to fire when `event` occurs."""
-        def decorator(func):
+        def assignedCallable(func):
             self.eventHandlers.setdefault(event, []).append(func) # Gives function a callable key
             return func  # return unchanged so it's still normally callable
-        return decorator
+        return assignedCallable
+
+    def ticker(self, ticksPerSecond : int = None):
+        """
+        Decorator: register a special type of function to be called a give number of times a second
+        :param ticksPerSecond: number of times per second the function should be called by app, defaults to fps
+        """
+        if ticksPerSecond == None:
+            ticksPerSecond = self.fps
+        elif (ticksPerSecond > self.fps):
+            raise ValueError("ticksPerSecond must be less than app.fps")
+        elif ticksPerSecond <= 0:
+            raise ValueError("ticksPerSecond must be positive")
+        
+        def assignedCallable(func):
+            def wrapper(app : App):
+                if (self.frame % (self.fps // ticksPerSecond) == 0):
+                    func(app)
+            self.eventHandlers.setdefault("tick", []).append(wrapper)
+            return func
+        return assignedCallable
+
     
     def fire(self, event : str, *args, **kwargs) -> None:
         """Call this internally when the event happens."""
@@ -251,9 +274,9 @@ class Item(pygame.sprite.Sprite):
 
         self.rotation = 0
 
-        # self.surface = self.getSurface()
-        # self.surfaceRect = self.surface.get_rect()
-        # self.hitBox = HitBox(self.app, self.surface, (self.x, self.y))
+        self.surface = None
+        self.surfaceRect = None
+        self.hitBox = None
 
         app.group.add(self)
         
