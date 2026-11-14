@@ -167,14 +167,14 @@ class App:
         self.groups['buttons'].add(newButton)
         return newButton
     
-    def on(self, event : str) -> function:
+    def on(self, event : str):
         """Decorator: register a function to fire when `event` occurs."""
         def assignedCallable(func):
             self.eventHandlers.setdefault(event, []).append(func) # Gives function a callable key
             return func  # return unchanged so it's still normally callable
         return assignedCallable
 
-    def ticker(self, ticksPerSecond : int = None) -> function:
+    def ticker(self, ticksPerSecond : int = None):
         """
         Decorator: register a special type of function to be called a give number of times a second
         :param ticksPerSecond: number of times per second the function should be called by app, defaults to fps
@@ -186,7 +186,7 @@ class App:
         elif ticksPerSecond <= 0:
             raise ValueError("ticksPerSecond must be positive")
         
-        def assignedCallable(func : function):
+        def assignedCallable(func):
             def wrapper(app : App):
                 if (self.frame % (self.fps // ticksPerSecond) == 0):
                     func(app)
